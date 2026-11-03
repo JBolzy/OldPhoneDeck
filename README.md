@@ -13,9 +13,10 @@ No jailbreak, no App Store, nothing to install on the phone: it runs in Safari, 
 
 - **8 big keys:** 7 Mac apps of your choice, plus **Take note**. Tap a key and the app opens on your Mac. Hold any key to pick apps.
 - **Take note → new Claude chat:** dictate a note, and it opens and sends a fresh conversation in the [Claude](https://claude.ai/download) desktop app.
-- **Now playing:** artwork, track, progress, and previous / play-pause / next for **Spotify** or **Apple Music**.
+- **Top CPU:** the three busiest processes on the Mac, refreshed every few seconds.
 - **Internet widget:** download, upload and ping (macOS's built-in `networkQuality`), plus a live traffic graph. Tap it to re-test.
 - **Batteries widget:** MacBook, Magic Keyboard / Mouse / Trackpad and AirPods (with case), each as an icon + percentage.
+- **System widget:** CPU, RAM, free disk space and pending macOS updates. It takes the Batteries slot when nothing is reporting a battery (e.g. a Mac mini).
 - **Fits any iPhone:** a compact 480×320 layout on old phones; full-width landscape and a portrait layout on modern ones.
 - **Modern iPhones also get:** voice input for Take note, and a **Phone** tab that streams the camera (into OBS) and the mic (into BlackHole) to your Mac.
 
@@ -47,7 +48,6 @@ Tips for a dedicated desk display: set **Auto-Lock → Never**, and use **Guided
 | Permission | Why |
 |---|---|
 | **Accessibility** | Take note presses Return in Claude to send your note |
-| **Automation → Spotify / Music** | Reading what's playing and controlling playback |
 
 They're granted to the app you run `oldphonedeck` from (e.g. Terminal).
 
@@ -69,7 +69,7 @@ Safari only allows the microphone, camera and speech recognition on **HTTPS** pa
 ```
 iPhone (Safari)                     Mac: oldphonedeck (Swift, no dependencies)
 ┌──────────────────────┐  Wi-Fi    ┌───────────────────────────────────────────────────┐
-│ deck page            │ ────────▶ │ :8045 HTTP   page, apps, stats, music, Take note  │
+│ deck page            │ ────────▶ │ :8045 HTTP   page, apps, stats, Take note         │
 │ (ES5 JavaScript so   │           │ :8047 HTTPS  same, for modern iPhones             │
 │  iOS 8/9 can run it) │ ────────▶ │ :8048 WSS    camera frames + mic audio            │
 └──────────────────────┘           └───────────────────────────────────────────────────┘
@@ -79,7 +79,8 @@ iPhone (Safari)                     Mac: oldphonedeck (Swift, no dependencies)
 |---|---|
 | App keys | `NSWorkspace` lists `/Applications`, renders icons, opens apps |
 | Take note | Opens `claude://claude.ai/new?q=…` (the same link the Claude app's own macOS Service uses), then presses Return |
-| Now playing | AppleScript to Spotify / Music, with a timeout so a pending permission prompt can't freeze it |
+| Top CPU | `ps -Aceo pcpu=,comm= -r` every 3 s |
+| System | `host_statistics` (CPU), `host_statistics64` (RAM), volume capacity of `/`, and `softwareupdate -l` every 6 h for pending updates |
 | Internet | `/usr/bin/networkQuality -c` + `en*` interface byte counters |
 | Batteries | IOKit power sources, `ioreg -r -k BatteryPercent`, `system_profiler SPBluetoothDataType` |
 | HTTPS | Local CA and server certificate generated with the built-in `openssl`, served as an iOS profile |
@@ -107,7 +108,6 @@ Settings live in `~/.oldphonedeck/`: `token` (the access code), `launcher.json` 
 |---|---|
 | Phone shows a blank page | Is the Mac on the same Wi-Fi? Check the printed IP. Old iOS can't run modern JavaScript, so if you edited `index.html`, keep it ES5. |
 | "This Connection Is Not Private" | Finish step 3 of the HTTPS setup (Certificate Trust Settings). |
-| Now playing stays empty | Approve macOS's "allow to control Spotify / Music" prompt, then wait a few seconds. |
 | Take note opens Claude but doesn't send | Grant Accessibility to the app running `oldphonedeck`. |
 | Mic says "No audio device matching BlackHole" | Install BlackHole 2ch, or ignore it if you don't use the mic. |
 

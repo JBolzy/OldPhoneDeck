@@ -99,23 +99,16 @@
   .sfill { display: block; height: 100%; width: 0; border-radius: 2px; background: #64d2ff; }
   .sfill.mid { background: #ffd60a; }
   .sfill.low { background: #ff453a; }
-  /* ---- now playing ---- */
-  #music { position: absolute; height: 52px; padding: 0; }
-  #mArt { position: absolute; left: 8px; top: 8px; width: 36px; height: 36px; border-radius: 8px;
-    background: linear-gradient(135deg, #3a3a3c, #232326); box-shadow: 0 2px 6px rgba(0,0,0,.4); }
-  #mArt.none { visibility: hidden; }
-  #mNote { position: absolute; left: 8px; top: 8px; width: 36px; height: 36px; border-radius: 8px; text-align: center;
-    line-height: 36px; font-size: 18px; color: #636366; background: linear-gradient(135deg, #3a3a3c, #232326); }
-  #mInfo { position: absolute; left: 54px; right: 116px; top: 9px; }
-  #mTitle { font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  #mArtist { font-size: 10.5px; color: #8e8e93; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  #mProg { position: absolute; left: 54px; right: 116px; bottom: 8px; height: 3px; border-radius: 2px; background: rgba(255,255,255,.12); overflow: hidden; }
-  #mProg i { display: block; height: 100%; width: 0; background: rgba(255,255,255,.75); border-radius: 2px; }
-  #mBtns { position: absolute; right: 8px; top: 9px; width: 104px; height: 34px; }
-  .mb { float: left; width: 34px; height: 34px; border-radius: 17px; position: relative; }
-  .mb svg { position: absolute; left: 9px; top: 9px; }
-  .mb.play { background: #f5f5f7; margin: 0 1px; }
-  .mb.down { -webkit-transform: scale(.9); transform: scale(.9); opacity: .7; }
+  /* ---- top processes ---- */
+  #top { position: absolute; height: 52px; padding: 0; }
+  #topLabel { position: absolute; left: 12px; top: 11px; width: 40px; font-size: 9.5px; font-weight: 600; letter-spacing: .6px;
+    text-transform: uppercase; color: #8e8e93; line-height: 12px; }
+  #topList { position: absolute; left: 58px; right: 6px; top: 0; bottom: 0; }
+  .tp { float: left; width: 33.33%; box-sizing: border-box; padding: 9px 6px 0; overflow: hidden; }
+  .tp span { display: block; font-size: 10.5px; color: #c7c7cc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tp b { display: block; margin-top: 2px; font-size: 15px; font-weight: 600; letter-spacing: -.4px; color: #f5f5f7; }
+  .tp b.mid { color: #ffd60a; }
+  .tp b.low { color: #ff453a; }
 
   /* ---- Phone tab (modern iPhones) ---- */
   #pvBox { position: absolute; left: 16px; top: 42px; height: 264px; border-radius: 18px; overflow: hidden;
@@ -188,16 +181,7 @@
   <div id="deck" class="view on">
     <div id="keys"></div>
     <div id="hint">Hold any key to choose apps</div>
-    <div id="music" class="card">
-      <div id="mNote">♪</div><img id="mArt" class="none" alt="">
-      <div id="mInfo"><div id="mTitle">Nothing playing</div><div id="mArtist">Spotify or Apple Music</div></div>
-      <div id="mProg"><i id="mProgFill"></i></div>
-      <div id="mBtns">
-        <div class="mb" id="mPrev"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M3.5 3v10M12.5 3.6v8.8L5.8 8z" fill="#f5f5f7" stroke="#f5f5f7" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></div>
-        <div class="mb play" id="mPlay"></div>
-        <div class="mb" id="mNext"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M12.5 3v10M3.5 3.6v8.8L10.2 8z" fill="#f5f5f7" stroke="#f5f5f7" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></div>
-      </div>
-    </div>
+    <div id="top" class="card"><div id="topLabel">Top CPU</div><div id="topList"></div></div>
     <div id="net" class="card">
       <h3 id="netTitle">Internet</h3>
       <div class="big"><span class="arrow">↓</span> <span id="down">–</span><small>Mbps</small></div>
@@ -209,6 +193,7 @@
       <div class="srow"><span>CPU</span><b id="sCpu">–</b><span class="sbar"><span class="sfill" id="sCpuBar"></span></span></div>
       <div class="srow"><span>RAM</span><b id="sRam">–</b><span class="sbar"><span class="sfill" id="sRamBar"></span></span></div>
       <div class="srow"><span>Disk</span><b id="sDisk">–</b><span class="sbar"><span class="sfill" id="sDiskBar"></span></span></div>
+      <div class="srow"><span>Updates</span><b id="sUpd">–</b></div>
     </div>
   </div>
 
@@ -342,7 +327,7 @@
       var stackH = 208 + 8 + 58 + 12 + netH, top = Math.max(90, Math.round((H - stackH) / 2) + 10);
       $('seg').style.top = '50px';
       px($('keys'), { left: (W - 316) / 2, top: top });
-      px($('music'), { left: 16, top: top + 208 + 4, width: W - 32 });
+      px($('top'), { left: 16, top: top + 208 + 4, width: W - 32 });
       cardW = (W - 42) / 2; batH = netH;
       var cardTop = top + 208 + 4 + 58 + 12;
       px(net, { left: 16, top: cardTop, width: cardW, height: netH });
@@ -357,7 +342,7 @@
       var keysArea = colLeft - 16 - 16;                       // left column: keys on top, now playing below
       var keysLeft = 16 + Math.max(0, (keysArea - 316) / 2);
       px($('keys'), { left: keysLeft, top: 52 });
-      px($('music'), { left: 16, top: 252, width: Math.max(316, keysArea) });
+      px($('top'), { left: 16, top: 252, width: Math.max(316, keysArea) });
       batH = 304 - (52 + netH + 10);
       px(net, { left: colLeft, top: 52, width: cardW, height: netH });
       px(bat, { left: colLeft, top: 52 + netH + 10, width: cardW });
@@ -368,7 +353,7 @@
     // The System card shares the Batteries slot; renderBatteries() shows whichever applies.
     var sysCard = $('sys');
     sysCard.style.left = bat.style.left; sysCard.style.top = bat.style.top;
-    sysCard.style.width = bat.style.width; sysCard.style.height = batH + 'px';
+    sysCard.style.width = bat.style.width; sysCard.style.height = Math.max(batH, 120) + 'px';
     batteryRows = Math.max(2, Math.floor((batH - 40) / 30)) * 2;   // max chips that fit, two per row
     var spark = $('spark'), sw = cardW - 24, sh = 18;
     spark.width = sw * 2; spark.height = sh * 2;
@@ -626,7 +611,7 @@
       box.appendChild(c);
     });
   }
-  function renderSys(s) {
+  function renderSys(s, upd) {
     s = s || {};
     function row(id, pct, text, tip) {
       $(id).textContent = text;
@@ -642,6 +627,12 @@
     if (s.diskTotal) {
       var used = s.diskTotal - s.diskFree;
       row('sDisk', used / s.diskTotal * 100, gb(s.diskFree) + ' GB free', gb(used) + ' GB used of ' + gb(s.diskTotal) + ' GB');
+    }
+    if (upd && upd.count !== undefined) {
+      var u = $('sUpd');
+      u.textContent = upd.count ? upd.count + ' available' : 'Up to date';
+      u.style.color = upd.count ? '#ffd60a' : '';
+      u.parentNode.title = (upd.titles || []).join('\n');
     }
   }
   function pollStats() {
@@ -659,8 +650,8 @@
       $('netTitle').textContent = sp.running ? 'Testing…' : 'Internet';
       drawSpark(d.net.history);
       renderBatteries(d.batteries);
-      renderSys(d.sys);
-      renderMusic(d.music);
+      renderSys(d.sys, d.updates);
+      renderTop(d.top);
     });
   }
   setInterval(pollStats, 2000);
@@ -668,39 +659,23 @@
     xhr('POST', url('/speedtest'), '', function () { $('netTitle').textContent = 'Testing…'; toast('Running a speed test (~20 s)'); });
   });
 
-  // ---------- now playing (Spotify / Apple Music on the Mac) ----------
-  var PLAY = '<svg width="16" height="16" viewBox="0 0 16 16"><path d="M5 3v10l8-5z" fill="#111"/></svg>';
-  var PAUSE = '<svg width="16" height="16" viewBox="0 0 16 16"><path d="M4.5 3h2.6v10H4.5zM8.9 3h2.6v10H8.9z" fill="#111"/></svg>';
-  var track = { playing: false, position: 0, duration: 0, at: 0 }, artKey = '';
-  function setPlayIcon(playing) { $('mPlay').innerHTML = playing ? PAUSE : PLAY; }
-  function renderMusic(m) {
-    m = m || {};
-    $('mTitle').textContent = m.title || 'Nothing playing';
-    $('mArtist').textContent = m.title ? (m.artist || '') + (m.app ? ' · ' + m.app : '') : 'Spotify or Apple Music';
-    track = { playing: !!m.playing, position: m.position || 0, duration: m.duration || 0, at: Date.now() };
-    setPlayIcon(track.playing);
-    var key = m.id && m.hasArt ? m.id : '';
-    if (key !== artKey) {
-      artKey = key;
-      if (key) { $('mArt').src = url('/artwork', 'id=' + encodeURIComponent(key)); $('mArt').className = ''; }
-      else $('mArt').className = 'none';
-    }
-    tickProgress();
+  // ---------- top CPU processes ----------
+  function renderTop(list) {
+    list = (list || []).slice(0, 3);
+    var box = $('topList');
+    box.innerHTML = '';
+    list.forEach(function (p) {
+      var c = document.createElement('div');
+      c.className = 'tp';
+      c.innerHTML = '<span></span><b></b>';
+      c.firstChild.textContent = p.name;
+      c.title = p.name;
+      var v = c.lastChild;
+      v.textContent = Math.round(p.cpu) + '%';
+      v.className = p.cpu >= 150 ? 'low' : p.cpu >= 80 ? 'mid' : '';
+      box.appendChild(c);
+    });
   }
-  function tickProgress() {
-    if (!track.duration) { $('mProgFill').style.width = '0'; return; }
-    var pos = track.position + (track.playing ? (Date.now() - track.at) / 1000 : 0);
-    $('mProgFill').style.width = Math.min(100, pos / track.duration * 100) + '%';
-  }
-  setInterval(tickProgress, 1000);
-  function media(cmd) {
-    xhr('POST', url('/media'), 'cmd=' + cmd, function () { setTimeout(pollStats, 450); });
-  }
-  tap($('mPlay'), function () { setPlayIcon(!track.playing); track.playing = !track.playing; media('playpause'); });
-  tap($('mNext'), function () { media('next'); });
-  tap($('mPrev'), function () { media('previous'); });
-  tap($('mInfo'), function () { media('open'); toast('Opening the player on the Mac'); });
-  setPlayIcon(false);
 
   // ---------- Phone tab: camera + mic to the Mac over a secure WebSocket ----------
   // Messages: 1 type byte + payload. 'H' token, 'V' JPEG frame, 'A' 16 kHz mono s16le PCM.

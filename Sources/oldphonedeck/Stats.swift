@@ -10,6 +10,8 @@ final class Stats {
     private var testing = false
     private var batteries: [[String: Any]] = []
     private var sys: [String: Any] = [:]
+    private var top: [[String: Any]] = []
+    private var updates: [String: Any] = [:]
     private var lastTicks: [UInt32]?
     private var sysTick = 0
 
@@ -23,7 +25,16 @@ final class Stats {
         // Battery reads shell out (system_profiler takes ~1 s), so keep them off the stats queue.
         batt.setEventHandler { [weak self] in DispatchQueue.global().async { self?.refreshBatteries() } }
         batt.resume()
-        timers = [net, batt]
+        let proc = DispatchSource.makeTimerSource(queue: queue)
+        proc.schedule(deadline: .now(), repeating: 3)
+        proc.setEventHandler { [weak self] in DispatchQueue.global().async { self?.refreshTop() } }
+        proc.resume()
+        // `softwareupdate -l` contacts Apple and can take a while, so it runs rarely and off the stats queue.
+        let upd = DispatchSource.makeTimerSource(queue: queue)
+        upd.schedule(deadline: .now() + 20, repeating: 6 * 3600)
+        upd.setEventHandler { [weak self] in DispatchQueue.global().async { self?.refreshUpdates() } }
+        upd.resume()
+        timers = [net, batt, proc, upd]
         // First speed test shortly after launch so the widget isn't empty.
         queue.asyncAfter(deadline: .now() + 5) { [weak self] in self?.runSpeedTest() }
     }
@@ -39,6 +50,8 @@ final class Stats {
                 "speed": s,
                 "batteries": batteries,
                 "sys": sys,
+                "top": top,
+                "updates": updates,
                 "mac": Host.current().localizedName ?? "Mac",
             ]
         }
@@ -85,6 +98,34 @@ final class Stats {
             sys["diskFree"] = Double(free)
         }
         sysTick += 1
+    }
+
+    // MARK: Top processes and pending macOS updates
+
+    private func refreshTop() {
+        guard let data = Stats.run("/bin/ps", ["-Aceo", "pcpu=,comm=", "-r"], timeout: 5),
+              let text = String(data: data, encoding: .utf8) else { return }
+        var out: [[String: Any]] = []
+        for line in text.split(separator: "\n") {
+            let t = line.trimmingCharacters(in: .whitespaces)
+            guard let sp = t.firstIndex(of: " "), let cpu = Double(t[..<sp]) else { continue }
+            let name = t[sp...].trimmingCharacters(in: .whitespaces)
+            if name == "ps" { continue }
+            out.append(["name": name, "cpu": cpu])
+            if out.count == 3 { break }
+        }
+        queue.async { self.top = out }
+    }
+
+    private func refreshUpdates() {
+        // The "No new software" message goes to stderr, so success with no "* Label:" lines means up to date.
+        guard let data = Stats.run("/usr/sbin/softwareupdate", ["-l"], timeout: 120) else { return }
+        let text = String(data: data, encoding: .utf8) ?? ""
+        let titles = text.split(separator: "\n").compactMap { line -> String? in
+            let s = line.trimmingCharacters(in: .whitespaces)
+            return s.hasPrefix("* Label:") ? String(s.dropFirst("* Label:".count)).trimmingCharacters(in: .whitespaces) : nil
+        }
+        queue.async { self.updates = ["count": titles.count, "titles": titles] }
     }
 
     // MARK: Network throughput (all en* interfaces)

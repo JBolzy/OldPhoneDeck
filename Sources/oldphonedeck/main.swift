@@ -80,8 +80,6 @@ phoneMedia.onFrame = { jpeg in
 
 let stats = Stats()
 stats.start()
-let music = Music()
-music.start()
 
 // MARK: Routes
 
@@ -117,19 +115,10 @@ let routes: (HTTPRequest, HTTPConnection) -> Void = { req, conn in
     case ("GET", "/info"):
         conn.respondJSON(["camera": phoneMedia.isLive])
     case ("GET", "/stats"):
-        var snap = stats.snapshot()
-        snap["music"] = music.snapshot()
-        conn.respondJSON(snap)
+        conn.respondJSON(stats.snapshot())
     case ("POST", "/speedtest"):
         stats.runSpeedTest()
         conn.respond(text: "ok")
-    case ("POST", "/media"):
-        let cmd = p["cmd"] ?? ""
-        if cmd == "open" { DispatchQueue.global().async { music.openPlayer() } } else { music.control(cmd) }
-        conn.respond(text: "ok")
-    case ("GET", "/artwork"):
-        guard let art = music.artwork() else { return conn.respond(404, text: "no artwork") }
-        conn.respond(200, "image/jpeg", art)
     case ("GET", "/launcher"):
         let selected: Any = Launcher.selected() ?? NSNull()
         conn.respondJSON(["selected": selected, "all": Apps.list()])
