@@ -385,13 +385,20 @@
   // ---------- clock ----------
   var DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  // Show the Mac's time, not the phone's: skew/tz come from /stats (null until the first poll).
+  var clockSkew = null, clockTz = 0;
   function tick() {
     var d = new Date();
-    // Keep the device's 12/24h preference: split "1:31:05 AM" into "1:31" + "AM".
-    var m = /(\d{1,2}[:.]\d{2})(?:[:.]\d{2})?\s*([^\d\s]*)/.exec(d.toLocaleTimeString()) || [];
-    $('time').textContent = m[1] || (d.getHours() + ':' + ('0' + d.getMinutes()).slice(-2));
-    $('ampm').textContent = m[2] || '';
-    $('date').textContent = DAYS[d.getDay()] + ' · ' + d.getDate() + ' ' + MONTHS[d.getMonth()];
+    var ampm = /[AaPp]\.?[Mm]/.test(d.toLocaleTimeString());
+    if (clockSkew !== null) d = new Date(d.getTime() + clockSkew + clockTz * 1000);
+    var h = clockSkew !== null ? d.getUTCHours() : d.getHours();
+    var mi = clockSkew !== null ? d.getUTCMinutes() : d.getMinutes();
+    var wd = clockSkew !== null ? d.getUTCDay() : d.getDay();
+    var dd = clockSkew !== null ? d.getUTCDate() : d.getDate();
+    var mo = clockSkew !== null ? d.getUTCMonth() : d.getMonth();
+    $('time').textContent = (ampm ? (h % 12 || 12) : h) + ':' + ('0' + mi).slice(-2);
+    $('ampm').textContent = ampm ? (h < 12 ? 'AM' : 'PM') : '';
+    $('date').textContent = DAYS[wd] + ' · ' + dd + ' ' + MONTHS[mo];
   }
   setInterval(tick, 10000);
 
@@ -641,6 +648,7 @@
       $('link').className = s === 200 ? 'ok' : '';
       if (s !== 200) return;
       var d = JSON.parse(text);
+      if (d.now) { clockSkew = d.now * 1000 - new Date().getTime(); clockTz = d.tz || 0; tick(); }
       $('macName').textContent = d.mac.replace(/^\S+['’]s?\s+/, '');
       var sp = d.speed || {};
       $('down').textContent = sp.down !== undefined ? fmt(sp.down) : '–';

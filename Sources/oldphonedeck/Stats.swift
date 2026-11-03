@@ -53,6 +53,8 @@ final class Stats {
                 "top": top,
                 "updates": updates,
                 "mac": Host.current().localizedName ?? "Mac",
+                "now": Date().timeIntervalSince1970,
+                "tz": TimeZone.current.secondsFromGMT(),
             ]
         }
     }
