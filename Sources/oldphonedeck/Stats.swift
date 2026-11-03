@@ -1,7 +1,7 @@
 import Foundation
 import IOKit.ps
 
-/// Data for the dashboard widgets: live network throughput, speed tests, and batteries.
+/// Data for the dashboard widgets: live network throughput, speed tests, batteries, and CPU/RAM/disk.
 final class Stats {
     private let queue = DispatchQueue(label: "stats")
     private var lastBytes: (rx: UInt64, tx: UInt64, at: Date)?
@@ -9,6 +9,9 @@ final class Stats {
     private var speed: [String: Any] = [:]
     private var testing = false
     private var batteries: [[String: Any]] = []
+    private var sys: [String: Any] = [:]
+    private var lastTicks: [UInt32]?
+    private var sysTick = 0
 
     func start() {
         let net = DispatchSource.makeTimerSource(queue: queue)
@@ -35,14 +38,59 @@ final class Stats {
                         "history": history.map { $0[0] }],
                 "speed": s,
                 "batteries": batteries,
+                "sys": sys,
                 "mac": Host.current().localizedName ?? "Mac",
             ]
         }
     }
 
+    // MARK: CPU, RAM and disk
+
+    private func sampleSystem() {
+        var cpuInfo = host_cpu_load_info()
+        var cpuCount = mach_msg_type_number_t(MemoryLayout<host_cpu_load_info>.size / MemoryLayout<integer_t>.size)
+        let cpuStatus = withUnsafeMutablePointer(to: &cpuInfo) {
+            $0.withMemoryRebound(to: integer_t.self, capacity: Int(cpuCount)) {
+                host_statistics(mach_host_self(), HOST_CPU_LOAD_INFO, $0, &cpuCount)
+            }
+        }
+        if cpuStatus == KERN_SUCCESS {
+            let t = [cpuInfo.cpu_ticks.0, cpuInfo.cpu_ticks.1, cpuInfo.cpu_ticks.2, cpuInfo.cpu_ticks.3]   // user, system, idle, nice
+            if let l = lastTicks {
+                let d = zip(t, l).map { Double($0 &- $1) }
+                let total = d.reduce(0, +)
+                if total > 0 { sys["cpu"] = (total - d[2]) / total * 100 }
+            }
+            lastTicks = t
+        }
+
+        // "Used" as Activity Monitor counts it: app memory + wired + compressed.
+        var vm = vm_statistics64()
+        var vmCount = mach_msg_type_number_t(MemoryLayout<vm_statistics64>.size / MemoryLayout<integer_t>.size)
+        let vmStatus = withUnsafeMutablePointer(to: &vm) {
+            $0.withMemoryRebound(to: integer_t.self, capacity: Int(vmCount)) {
+                host_statistics64(mach_host_self(), HOST_VM_INFO64, $0, &vmCount)
+            }
+        }
+        if vmStatus == KERN_SUCCESS {
+            let pages = Double(vm.internal_page_count) - Double(vm.purgeable_count) + Double(vm.wire_count) + Double(vm.compressor_page_count)
+            sys["ramUsed"] = pages * Double(sysconf(_SC_PAGESIZE))
+            sys["ramTotal"] = Double(ProcessInfo.processInfo.physicalMemory)
+        }
+
+        if sysTick % 30 == 0,
+           let v = try? URL(fileURLWithPath: "/").resourceValues(forKeys: [.volumeTotalCapacityKey, .volumeAvailableCapacityForImportantUsageKey]),
+           let total = v.volumeTotalCapacity, let free = v.volumeAvailableCapacityForImportantUsage {
+            sys["diskTotal"] = Double(total)
+            sys["diskFree"] = Double(free)
+        }
+        sysTick += 1
+    }
+
     // MARK: Network throughput (all en* interfaces)
 
     private func sampleNetwork() {
+        sampleSystem()
         var rx: UInt64 = 0, tx: UInt64 = 0
         var ifaddr: UnsafeMutablePointer<ifaddrs>?
         guard getifaddrs(&ifaddr) == 0, let first = ifaddr else { return }

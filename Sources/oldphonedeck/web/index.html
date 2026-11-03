@@ -92,6 +92,13 @@
   .chip b.low { color: #ff453a; }
   .chip b.chg { color: #30d158; }
   .empty-note { font-size: 10px; color: #636366; }
+  /* System: CPU / RAM / disk rows with a thin usage bar */
+  .srow { position: relative; height: 19px; font-size: 10.5px; color: #c7c7cc; white-space: nowrap; }
+  .srow b { position: absolute; right: 0; top: 0; font-weight: 600; color: #f5f5f7; letter-spacing: -.2px; }
+  .sbar { position: absolute; left: 0; right: 0; top: 14px; height: 3px; border-radius: 2px; background: rgba(255,255,255,.12); overflow: hidden; }
+  .sfill { display: block; height: 100%; width: 0; border-radius: 2px; background: #64d2ff; }
+  .sfill.mid { background: #ffd60a; }
+  .sfill.low { background: #ff453a; }
   /* ---- now playing ---- */
   #music { position: absolute; height: 52px; padding: 0; }
   #mArt { position: absolute; left: 8px; top: 8px; width: 36px; height: 36px; border-radius: 8px;
@@ -198,6 +205,11 @@
       <canvas id="spark" width="208" height="36"></canvas>
     </div>
     <div id="bat" class="card"><h3>Batteries</h3><div id="batList"></div></div>
+    <div id="sys" class="card"><h3>System</h3>
+      <div class="srow"><span>CPU</span><b id="sCpu">–</b><span class="sbar"><span class="sfill" id="sCpuBar"></span></span></div>
+      <div class="srow"><span>RAM</span><b id="sRam">–</b><span class="sbar"><span class="sfill" id="sRamBar"></span></span></div>
+      <div class="srow"><span>Disk</span><b id="sDisk">–</b><span class="sbar"><span class="sfill" id="sDiskBar"></span></span></div>
+    </div>
   </div>
 
   <!-- Modern iPhones only: camera + mic to the Mac (needs HTTPS) -->
@@ -353,6 +365,10 @@
       px($('pvBox'), { left: 16, top: 42, width: W - 32 - ctlW - 12, height: 264 });
       px($('pCtl'), { left: W - 16 - ctlW, top: 42, width: ctlW });
     }
+    // The System card shares the Batteries slot; renderBatteries() shows whichever applies.
+    var sysCard = $('sys');
+    sysCard.style.left = bat.style.left; sysCard.style.top = bat.style.top;
+    sysCard.style.width = bat.style.width; sysCard.style.height = batH + 'px';
     batteryRows = Math.max(2, Math.floor((batH - 40) / 30)) * 2;   // max chips that fit, two per row
     var spark = $('spark'), sw = cardW - 24, sh = 18;
     spark.width = sw * 2; spark.height = sh * 2;
@@ -586,7 +602,10 @@
     var rows = lastBatteries.slice();
     if (phone) rows.unshift({ name: 'iPhone', kind: 'phone', level: Math.round(phone.level * 100), charging: phone.charging });
     var box = $('batList');
-    if (!rows.length) { box.innerHTML = '<div class="empty-note">No devices reporting</div>'; $('bat').style.height = '64px'; return; }
+    // No batteries (e.g. a Mac mini): the slot shows CPU / RAM / disk instead.
+    $('bat').style.display = rows.length ? '' : 'none';
+    $('sys').style.display = rows.length ? 'none' : '';
+    if (!rows.length) return;
     box.innerHTML = '';
     var chips = [];
     rows.forEach(function (b) {
@@ -607,6 +626,24 @@
       box.appendChild(c);
     });
   }
+  function renderSys(s) {
+    s = s || {};
+    function row(id, pct, text, tip) {
+      $(id).textContent = text;
+      $(id).parentNode.title = tip || '';
+      var bar = $(id + 'Bar');
+      bar.style.width = Math.max(0, Math.min(100, pct)) + '%';
+      bar.className = 'sfill' + (pct >= 90 ? ' low' : pct >= 75 ? ' mid' : '');
+    }
+    var GB = 1073741824;
+    function gb(n) { return (n / GB).toFixed(n < 10 * GB ? 1 : 0); }
+    if (s.cpu !== undefined) row('sCpu', s.cpu, Math.round(s.cpu) + '%');
+    if (s.ramTotal) row('sRam', s.ramUsed / s.ramTotal * 100, gb(s.ramUsed) + ' / ' + gb(s.ramTotal) + ' GB');
+    if (s.diskTotal) {
+      var used = s.diskTotal - s.diskFree;
+      row('sDisk', used / s.diskTotal * 100, gb(s.diskFree) + ' GB free', gb(used) + ' GB used of ' + gb(s.diskTotal) + ' GB');
+    }
+  }
   function pollStats() {
     if (view !== 'deck') return;
     xhr('GET', url('/stats'), null, function (s, text) {
@@ -622,6 +659,7 @@
       $('netTitle').textContent = sp.running ? 'Testing…' : 'Internet';
       drawSpark(d.net.history);
       renderBatteries(d.batteries);
+      renderSys(d.sys);
       renderMusic(d.music);
     });
   }
