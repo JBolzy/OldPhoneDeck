@@ -116,6 +116,17 @@ let routes: (HTTPRequest, HTTPConnection) -> Void = { req, conn in
         conn.respondJSON(["camera": phoneMedia.isLive])
     case ("GET", "/stats"):
         conn.respondJSON(stats.snapshot())
+    case ("GET", "/memory"):
+        DispatchQueue.global().async {
+            let snap = MemoryStats.snapshot()
+            server.queue.async { conn.respondJSON(snap) }
+        }
+    case ("POST", "/ollama/stop"):
+        let model = p["model"] ?? ""
+        DispatchQueue.global().async {
+            let ok = MemoryStats.ollamaStop(model)
+            server.queue.async { ok ? conn.respond(text: "ok") : conn.respond(404, text: "model not loaded") }
+        }
     case ("POST", "/speedtest"):
         stats.runSpeedTest()
         conn.respond(text: "ok")

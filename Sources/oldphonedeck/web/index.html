@@ -99,6 +99,24 @@
   .sfill { display: block; height: 100%; width: 0; border-radius: 2px; background: #64d2ff; }
   .sfill.mid { background: #ffd60a; }
   .sfill.low { background: #ff453a; }
+  .srow.tap { cursor: pointer; }
+  .srow.tap i { font-style: normal; color: #636366; }
+  /* ---- memory overlay (tap RAM) ---- */
+  #mem .sheet { top: 6px; padding: 11px 13px 10px; }
+  #mem h2 { margin-bottom: 5px; }
+  #memStat { font-size: 10.5px; color: #8e8e93; margin-bottom: 5px; }
+  #memStat b { font-weight: 600; color: #f5f5f7; }
+  #memStat b.mid { color: #ffd60a; }
+  #memStat b.low { color: #ff453a; }
+  .mrow { position: relative; height: 19px; font-size: 10.5px; color: #c7c7cc; white-space: nowrap; }
+  .mrow span { display: block; width: 255px; overflow: hidden; text-overflow: ellipsis; }
+  .mrow b { position: absolute; right: 0; top: 0; font-weight: 600; color: #f5f5f7; }
+  .mrow .sbar { top: 14px; }
+  .mrow.ol { height: 26px; margin-bottom: 4px; padding-bottom: 3px; border-bottom: .5px solid rgba(255,255,255,.12); }
+  .mrow.ol span { line-height: 22px; width: 190px; }
+  .mrow.ol b { right: 66px; line-height: 22px; }
+  .ubtn { position: absolute; right: 0; top: 0; height: 22px; line-height: 22px; padding: 0 11px; border-radius: 11px;
+    background: #3a3a3c; color: #fff; font-size: 11px; font-weight: 600; }
   /* ---- top processes ---- */
   #top { position: absolute; height: 52px; padding: 0; }
   #topLabel { position: absolute; left: 12px; top: 11px; width: 40px; font-size: 9.5px; font-weight: 600; letter-spacing: .6px;
@@ -191,7 +209,7 @@
     <div id="bat" class="card"><h3>Batteries</h3><div id="batList"></div></div>
     <div id="sys" class="card"><h3>System</h3>
       <div class="srow"><span>CPU</span><b id="sCpu">–</b><span class="sbar"><span class="sfill" id="sCpuBar"></span></span></div>
-      <div class="srow"><span>RAM</span><b id="sRam">–</b><span class="sbar"><span class="sfill" id="sRamBar"></span></span></div>
+      <div class="srow tap"><span>RAM <i>›</i></span><b id="sRam">–</b><span class="sbar"><span class="sfill" id="sRamBar"></span></span></div>
       <div class="srow"><span>Disk</span><b id="sDisk">–</b><span class="sbar"><span class="sfill" id="sDiskBar"></span></span></div>
       <div class="srow"><span>Updates</span><b id="sUpd">–</b></div>
     </div>
@@ -240,6 +258,16 @@
       <div class="btns"><div class="btn primary" id="editSave">Save</div><div class="btn" id="editCancel">Cancel</div></div>
       <div id="editCount"></div>
       <div id="editList"></div>
+    </div>
+  </div>
+
+  <!-- RAM detail: top apps by memory, pressure, swap, Ollama -->
+  <div id="mem" class="scrim">
+    <div class="sheet">
+      <h2>Memory <small>· tap outside to close</small></h2>
+      <div id="memStat"></div>
+      <div id="memOl"></div>
+      <div id="memList"></div>
     </div>
   </div>
 
@@ -380,7 +408,7 @@
     for (var i = 0; i < segs.length; i++) (function (s) { tap(s, function () { show(s.getAttribute('data-view')); }); })(segs[i]);
   }
   function sheet(id, on) { $(id).className = 'scrim' + (on ? ' on' : ''); }
-  window.deckHome = function () { sheet('claude', false); sheet('edit', false); show('deck'); };
+  window.deckHome = function () { memOpen(false); sheet('claude', false); sheet('edit', false); show('deck'); };
 
   // ---------- clock ----------
   var DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -642,6 +670,59 @@
       u.parentNode.title = (upd.titles || []).join('\n');
     }
   }
+  // ---------- memory overlay ----------
+  var memTimer = null, memOlKey = '';
+  function memOpen(on) {
+    sheet('mem', on);
+    clearInterval(memTimer);
+    memTimer = null;
+    if (on) { memOlKey = ''; memPoll(); memTimer = setInterval(memPoll, 3000); }
+  }
+  function esc(t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function mbText(mb) { return mb >= 1024 ? (mb / 1024).toFixed(1) + ' GB' : mb + ' MB'; }
+  function memPoll() {
+    xhr('GET', url('/memory'), null, function (st, text) {
+      if (st !== 200 || !memTimer) return;
+      var d = JSON.parse(text), i;
+      var lv = d.pressure === 'critical' ? 'low' : d.pressure === 'warn' ? 'mid' : '';
+      var word = d.pressure === 'critical' ? 'Critical' : d.pressure === 'warn' ? 'Warning' : 'Normal';
+      $('memStat').innerHTML = 'Pressure <b class="' + lv + '">' + word + '</b> · Swap <b>' + mbText(d.swapMB || 0) + '</b>';
+      var apps = (d.apps || []).slice(0, 10), top = apps.length ? apps[0].mb : 1, html = '';
+      for (i = 0; i < apps.length; i++) {
+        html += '<div class="mrow"><span>' + esc(apps[i].name) + '</span><b>' + mbText(apps[i].mb) + '</b>' +
+          '<span class="sbar"><span class="sfill" style="width:' + Math.max(1, Math.round(apps[i].mb / top * 100)) + '%"></span></span></div>';
+      }
+      $('memList').innerHTML = html;
+      var models = d.ollama || [], key = '';
+      for (i = 0; i < models.length; i++) key += models[i].name + ':' + models[i].mb + ';';
+      if (key === memOlKey) return;   // leave the Unload button alone unless something changed
+      memOlKey = key;
+      var box = $('memOl');
+      box.innerHTML = '';
+      models.forEach(function (m) {
+        var row = document.createElement('div'); row.className = 'mrow ol';
+        row.innerHTML = '<span>Ollama · ' + esc(m.name) + '</span><b>' + mbText(m.mb) + '</b>';
+        var btn = document.createElement('div'); btn.className = 'ubtn'; btn.textContent = 'Unload';
+        tap(btn, function () {
+          btn.textContent = 'Unloading…';
+          xhr('POST', url('/ollama/stop'), 'model=' + encodeURIComponent(m.name), function (s2) {
+            toast(s2 === 200 ? 'Unloaded ' + m.name : 'Could not unload ' + m.name);
+            setTimeout(memPoll, 500);
+          });
+        });
+        row.appendChild(btn);
+        box.appendChild(row);
+      });
+    });
+  }
+  tap($('sRam').parentNode, function () { memOpen(true); });
+  (function () {
+    var scr = $('mem');
+    function outside(e) { if (e.target === scr) memOpen(false); }
+    scr.addEventListener('touchend', outside);
+    scr.addEventListener('click', outside);
+  })();
+
   function pollStats() {
     if (view !== 'deck') return;
     xhr('GET', url('/stats'), null, function (s, text) {
