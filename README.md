@@ -5,20 +5,19 @@ No jailbreak, no App Store, nothing to install on the phone: it runs in Safari, 
 
 ![An iPhone 4S on a desk stand running OldPhoneDeck](docs/desk.jpg)
 
-| The deck | Take note | Pick your apps |
-|---|---|---|
-| ![Deck](docs/deck.jpg) | ![Take note](docs/take-note.jpg) | ![Pick apps](docs/pick-apps.jpg) |
+| The deck | Pick your apps |
+|---|---|
+| ![Deck](docs/deck.jpg) | ![Pick apps](docs/pick-apps.jpg) |
 
 ## Features
 
-- **8 big keys:** 7 Mac apps of your choice, plus **Take note**. Tap a key and the app opens on your Mac. Hold any key to pick apps.
-- **Take note → new Claude chat:** dictate a note, and it opens and sends a fresh conversation in the [Claude](https://claude.ai/download) desktop app.
-- **Top CPU:** the three busiest processes on the Mac, refreshed every few seconds.
+- **4 big keys:** a 2x2 grid of Mac apps of your choice. Tap a key and the app opens on your Mac. Hold any key to pick apps.
+- **Top CPU:** the three busiest processes on the Mac, refreshed every few seconds. The four status cards (Internet, System, Batteries, Top CPU) form a 2x2 grid beside the keys.
 - **Internet widget:** download, upload and ping (macOS's built-in `networkQuality`), plus a live traffic graph. Tap it to re-test.
 - **Batteries widget:** MacBook, Magic Keyboard / Mouse / Trackpad and AirPods (with case), each as an icon + percentage.
-- **System widget:** CPU, RAM, free disk space and pending macOS updates. It takes the Batteries slot when nothing is reporting a battery (e.g. a Mac mini).
+- **System widget:** CPU, RAM, free disk space and pending macOS updates. Tap RAM for the top apps by memory, memory pressure and swap (plus an Unload button for a loaded Ollama model).
 - **Fits any iPhone:** a compact 480×320 layout on old phones; full-width landscape and a portrait layout on modern ones.
-- **Modern iPhones also get:** voice input for Take note, and a **Phone** tab that streams the camera (into OBS) and the mic (into BlackHole) to your Mac.
+- **Modern iPhones also get:** a **Phone** tab that streams the camera (into OBS) and the mic (into BlackHole) to your Mac.
 
 ## Requirements
 
@@ -39,17 +38,9 @@ It prints a link like `http://192.168.x.x:8045/#k=<token>`. On the phone:
 
 1. Open that link in **Safari**.
 2. Tap **Share → Add to Home Screen** and launch it from there to run it full screen.
-3. **Hold any key** to choose your 7 apps.
+3. **Hold any key** to choose your 4 apps.
 
 Tips for a dedicated desk display: set **Auto-Lock → Never**, and use **Guided Access** (Settings → Accessibility) to lock the phone to the deck.
-
-### macOS permissions (asked on first use)
-
-| Permission | Why |
-|---|---|
-| **Accessibility** | Take note presses Return in Claude to send your note |
-
-They're granted to the app you run `oldphonedeck` from (e.g. Terminal).
 
 ### Modern iPhone: voice, camera and mic (optional)
 
@@ -69,7 +60,7 @@ Safari only allows the microphone, camera and speech recognition on **HTTPS** pa
 ```
 iPhone (Safari)                     Mac: oldphonedeck (Swift, no dependencies)
 ┌──────────────────────┐  Wi-Fi    ┌───────────────────────────────────────────────────┐
-│ deck page            │ ────────▶ │ :8045 HTTP   page, apps, stats, Take note         │
+│ deck page            │ ────────▶ │ :8045 HTTP   page, apps, stats                  │
 │ (ES5 JavaScript so   │           │ :8047 HTTPS  same, for modern iPhones             │
 │  iOS 8/9 can run it) │ ────────▶ │ :8048 WSS    camera frames + mic audio            │
 └──────────────────────┘           └───────────────────────────────────────────────────┘
@@ -78,9 +69,9 @@ iPhone (Safari)                     Mac: oldphonedeck (Swift, no dependencies)
 | Feature | Mac side |
 |---|---|
 | App keys | `NSWorkspace` lists `/Applications`, renders icons, opens apps |
-| Take note | Opens `claude://claude.ai/new?q=…` (the same link the Claude app's own macOS Service uses), then presses Return |
 | Top CPU | `ps -Aceo pcpu=,comm= -r` every 3 s |
 | System | `host_statistics` (CPU), `host_statistics64` (RAM), volume capacity of `/`, and `softwareupdate -l` every 6 h for pending updates |
+| Memory (tap RAM) | `top -l 1 -o mem` (footprint, grouped by parent app), `sysctl` for pressure and swap, `ollama ps` / `ollama stop` |
 | Internet | `/usr/bin/networkQuality -c` + `en*` interface byte counters |
 | Batteries | IOKit power sources, `ioreg -r -k BatteryPercent`, `system_profiler SPBluetoothDataType` |
 | HTTPS | Local CA and server certificate generated with the built-in `openssl`, served as an iOS profile |
@@ -108,7 +99,6 @@ Settings live in `~/.oldphonedeck/`: `token` (the access code), `launcher.json` 
 |---|---|
 | Phone shows a blank page | Is the Mac on the same Wi-Fi? Check the printed IP. Old iOS can't run modern JavaScript, so if you edited `index.html`, keep it ES5. |
 | "This Connection Is Not Private" | Finish step 3 of the HTTPS setup (Certificate Trust Settings). |
-| Take note opens Claude but doesn't send | Grant Accessibility to the app running `oldphonedeck`. |
 | Mic says "No audio device matching BlackHole" | Install BlackHole 2ch, or ignore it if you don't use the mic. |
 
 ## Built with Claude Code

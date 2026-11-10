@@ -1,16 +1,5 @@
 import AppKit
 
-/// Synthetic key presses (used to press Return in Claude). Requires Accessibility permission.
-enum Input {
-    static func key(_ name: String) {
-        let codes: [String: CGKeyCode] = ["return": 36, "tab": 48, "space": 49, "delete": 51, "escape": 53]
-        guard let code = codes[name] else { return }
-        for down in [true, false] {
-            CGEvent(keyboardEventSource: nil, virtualKey: code, keyDown: down)?.post(tap: .cghidEventTap)
-        }
-    }
-}
-
 /// The app launcher: lists installed apps, renders their icons, and opens them.
 enum Apps {
     private static let lock = NSLock()
@@ -79,38 +68,5 @@ enum Launcher {
         try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
         try JSONSerialization.data(withJSONObject: clean, options: .prettyPrinted).write(to: file)
         return clean.count
-    }
-}
-
-/// Sends text to the Claude desktop app using the same deep link its own macOS
-/// Service uses: claude://claude.ai/new?q=<text>&surface=chat (found in app.asar).
-enum Claude {
-    static let bundleID = "com.anthropic.claudefordesktop"
-
-    static func ask(_ text: String, autoSend: Bool) {
-        var comps = URLComponents()
-        comps.scheme = "claude"
-        comps.host = "claude.ai"
-        comps.path = "/new"
-        comps.queryItems = [URLQueryItem(name: "q", value: text), URLQueryItem(name: "surface", value: "chat")]
-        // URLComponents leaves "+" and "&"-adjacent chars ambiguous for some parsers; encode strictly.
-        comps.percentEncodedQuery = comps.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
-        guard let url = comps.url else { return }
-        NSWorkspace.shared.open(url)
-        guard autoSend else { return }
-        // Press Return once the new chat has loaded — only if Claude is actually in front.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-            guard NSWorkspace.shared.frontmostApplication?.bundleIdentifier == bundleID else {
-                print("Claude was not frontmost; left the message unsent")
-                return
-            }
-            Input.key("return")
-        }
-    }
-
-    static func focus() {
-        if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) {
-            NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
-        }
     }
 }

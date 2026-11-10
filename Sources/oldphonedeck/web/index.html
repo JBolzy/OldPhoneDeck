@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <!-- OldPhoneDeck: a Stream Deck–style home for a phone in landscape.
      Must run in iOS 8/9 Safari (iPhone 4S): ES5 syntax only, no fetch, no flex gap, no Intl.
-     Modern iPhones additionally get a Phone tab (camera + mic to the Mac) and voice input for Ask Claude. -->
+     Modern iPhones additionally get a Phone tab (camera + mic to the Mac). -->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -48,25 +48,19 @@
   .batt:after { content: ""; position: absolute; right: -3px; top: 2px; width: 1.5px; height: 5px; background: rgba(255,255,255,.5); border-radius: 0 1px 1px 0; }
   .batt i { position: absolute; left: 1px; top: 1px; bottom: 1px; border-radius: 1px; background: #fff; }
 
-  /* ---- keys ---- */
-  #keys { position: absolute; top: 76px; width: 316px; }
-  .key { position: relative; float: left; width: 70px; margin: 0 12px 14px 0; text-align: center; }
-  .key:nth-child(4n) { margin-right: 0; }
-  .cap { width: 70px; height: 70px; border-radius: 18px; position: relative;
+  /* ---- keys: a 2x2 grid, sized and placed by layout() ---- */
+  .key { position: absolute; text-align: center; }
+  .cap { position: relative; border-radius: 24%;
     background: linear-gradient(180deg, #303036 0%, #1b1b1f 100%);
     box-shadow: inset 0 1px 0 rgba(255,255,255,.11), inset 0 -1px 0 rgba(0,0,0,.6), 0 3px 0 #0a0a0c, 0 8px 16px rgba(0,0,0,.55);
     -webkit-transition: -webkit-transform .08s, box-shadow .08s; transition: transform .08s, box-shadow .08s; }
-  .cap img { position: absolute; left: 10px; top: 10px; width: 50px; height: 50px; }
+  .cap img { position: absolute; left: 14%; top: 14%; width: 72%; height: 72%; }
   .key.down .cap { -webkit-transform: translateY(2px) scale(.97); transform: translateY(2px) scale(.97);
     box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 1px 0 #0a0a0c, 0 2px 6px rgba(0,0,0,.5); }
-  .key .label { margin-top: 7px; font-size: 10px; font-weight: 500; color: #aeaeb2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .key .label { margin-top: 8px; font-size: 11px; font-weight: 500; color: #aeaeb2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .key.empty .cap { background: rgba(255,255,255,.03); box-shadow: inset 0 0 0 1px rgba(255,255,255,.12); }
-  .key.empty .cap:after { content: "+"; position: absolute; left: 0; right: 0; top: 16px; font-size: 30px; font-weight: 200; color: #636366; }
-  .key.claude .cap { background: linear-gradient(180deg, #e8946f 0%, #c55e39 100%);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.30), inset 0 -1px 0 rgba(0,0,0,.25), 0 3px 0 #6b2d16, 0 8px 18px rgba(217,119,87,.35); }
-  .key.claude.down .cap { box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 1px 0 #6b2d16, 0 2px 8px rgba(217,119,87,.3); }
-  .key.claude svg { position: absolute; left: 17px; top: 17px; }
-  .key.claude .label { color: #f2b49c; }
+  .key.empty .cap:after { content: "+"; position: absolute; left: 0; right: 0; top: 50%; line-height: 1; font-size: 36px; font-weight: 200; color: #636366;
+    text-align: center; -webkit-transform: translateY(-52%); transform: translateY(-52%); }
   #hint { position: absolute; top: 290px; font-size: 9.5px; color: #48484a; text-align: center; }
 
   /* ---- widgets ---- */
@@ -117,14 +111,10 @@
   .mrow.ol b { right: 66px; line-height: 22px; }
   .ubtn { position: absolute; right: 0; top: 0; height: 22px; line-height: 22px; padding: 0 11px; border-radius: 11px;
     background: #3a3a3c; color: #fff; font-size: 11px; font-weight: 600; }
-  /* ---- top processes ---- */
-  #top { position: absolute; height: 52px; padding: 0; }
-  #topLabel { position: absolute; left: 12px; top: 11px; width: 40px; font-size: 9.5px; font-weight: 600; letter-spacing: .6px;
-    text-transform: uppercase; color: #8e8e93; line-height: 12px; }
-  #topList { position: absolute; left: 58px; right: 6px; top: 0; bottom: 0; }
-  .tp { float: left; width: 33.33%; box-sizing: border-box; padding: 9px 6px 0; overflow: hidden; }
-  .tp span { display: block; font-size: 10.5px; color: #c7c7cc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .tp b { display: block; margin-top: 2px; font-size: 15px; font-weight: 600; letter-spacing: -.4px; color: #f5f5f7; }
+  /* ---- top processes: three rows, name left, CPU % right ---- */
+  .tp { position: relative; height: 26px; }
+  .tp span { position: absolute; left: 0; right: 44px; top: 6px; font-size: 10.5px; color: #c7c7cc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tp b { position: absolute; right: 0; top: 3px; font-size: 14px; font-weight: 600; letter-spacing: -.4px; color: #f5f5f7; }
   .tp b.mid { color: #ffd60a; }
   .tp b.low { color: #ff453a; }
 
@@ -157,18 +147,10 @@
     background: #1c1c1e; box-shadow: inset 0 0 0 .5px rgba(255,255,255,.1), 0 20px 40px rgba(0,0,0,.6); }
   .sheet h2 { margin: 0 0 9px; font-size: 13px; font-weight: 600; }
   .sheet h2 small { font-size: 10.5px; font-weight: 500; color: #8e8e93; }
-  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 4px; background: #d97757; margin-right: 6px; }
-  #askText { width: 100%; height: 56px; box-sizing: border-box; border: 0; border-radius: 11px; padding: 8px 10px; resize: none;
-    background: #2c2c2e; color: #fff; font: 14px -apple-system, "Helvetica Neue", sans-serif; -webkit-user-select: text; outline: none; }
   .btns { margin-top: 9px; overflow: hidden; }
   .btn { float: right; margin-left: 8px; padding: 0 15px; height: 28px; line-height: 28px; border-radius: 14px; font-size: 12px; font-weight: 600;
     background: #3a3a3c; color: #fff; }
   .btn.primary { background: #d97757; }
-  .opt { float: left; font-size: 10.5px; color: #8e8e93; line-height: 28px; }
-  .opt input { vertical-align: -2px; }
-  #askMic { float: left; width: 28px; height: 28px; border-radius: 14px; background: #3a3a3c; margin-right: 8px; position: relative; display: none; }
-  #askMic.live { background: #ff453a; }
-  #askMic svg { position: absolute; left: 7px; top: 5px; }
   #edit .sheet { left: 8px; right: 8px; width: auto; margin-left: 0; top: 8px; bottom: 8px; padding: 10px 10px 0; }
   #filter { position: absolute; left: 10px; right: 150px; top: 10px; height: 28px; box-sizing: border-box; border: 0; border-radius: 9px;
     background: #2c2c2e; color: #fff; padding: 0 10px; font-size: 13px; outline: none; -webkit-user-select: text; }
@@ -195,11 +177,11 @@
 <div id="stage">
   <div id="toast"></div>
 
-  <!-- The deck: 8 keys + widgets -->
+  <!-- The deck: 2x2 app keys (left) + 2x2 status cards (right) -->
   <div id="deck" class="view on">
     <div id="keys"></div>
     <div id="hint">Hold any key to choose apps</div>
-    <div id="top" class="card"><div id="topLabel">Top CPU</div><div id="topList"></div></div>
+    <div id="top" class="card"><h3>Top CPU</h3><div id="topList"></div></div>
     <div id="net" class="card">
       <h3 id="netTitle">Internet</h3>
       <div class="big"><span class="arrow">↓</span> <span id="down">–</span><small>Mbps</small></div>
@@ -238,20 +220,7 @@
     <div id="right"><span id="link"></span><span id="macName">Mac</span><span id="phoneBatt" style="display:none"><span class="batt"><i id="phoneBattFill"></i></span></span></div>
   </div>
 
-  <!-- Ask Claude -->
-  <div id="claude" class="scrim">
-    <div class="sheet">
-      <h2><span class="dot"></span>Take a note <small>· starts a new Claude chat</small></h2>
-      <textarea id="askText" placeholder="Tap 🎤 on the keyboard and speak…"></textarea>
-      <div class="btns">
-        <div id="askMic"><svg width="14" height="18" viewBox="0 0 14 18"><rect x="4" y="0" width="6" height="11" rx="3" fill="#fff"/><path d="M1 8a6 6 0 0 0 12 0M7 14v3" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg></div>
-        <div class="btn primary" id="askSend">Start chat</div>
-        <div class="btn" id="askCancel">Cancel</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Choose the 7 apps -->
+  <!-- Choose the 4 apps -->
   <div id="edit" class="scrim">
     <div class="sheet">
       <input id="filter" placeholder="Search apps" autocorrect="off" autocapitalize="none">
@@ -284,7 +253,7 @@
 (function () {
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
-  var APP_SLOTS = 7;   // 8 keys: 7 apps + Ask Claude
+  var APP_SLOTS = 4;   // a 2x2 grid of apps
   var modern = 'isSecureContext' in window;   // iOS 11.1+; the 4S is never "modern"
 
   // ---------- plumbing ----------
@@ -345,45 +314,52 @@
     st.style.top = ins.t + (ah - H * s) / 2 + 'px';
     layout();
   }
+  var keyGeom = { cap: 90, x0: 16, y0: 52, rowH: 110 };
+  function placeKeys() {
+    var ks = $('keys').children, g = keyGeom;
+    for (var i = 0; i < ks.length; i++) {
+      var col = i % 2, row = (i - col) / 2;
+      px(ks[i], { left: g.x0 + col * (g.cap + 10), top: g.y0 + row * (g.rowH + 10), width: g.cap });
+      px(ks[i].firstChild, { width: g.cap, height: g.cap });
+    }
+  }
   function layout() {
-    // Compact widgets: Internet (number + small graph) and Batteries (icon + %), stacked in one narrow column.
-    var net = $('net'), bat = $('bat'), cardW, netH = 104, batH;
-    net.className = bat.className = 'card';
+    // Two 2x2 grids: app keys on the left, status cards (Internet, System / Batteries, Top CPU) on the right.
+    // Portrait (modern phones upright): keys on top, the cards in a 2x2 grid below.
+    var net = $('net'), bat = $('bat'), sys = $('sys'), topCard = $('top');
+    var cardW, cardH, cap, cardLeft, cardTop, cardGap = 10;
     $('hint').style.display = 'none';
     if (portrait) {
-      // Everything in one centered stack: keys, now playing, then the two widgets side by side.
-      var stackH = 208 + 8 + 58 + 12 + netH, top = Math.max(90, Math.round((H - stackH) / 2) + 10);
+      var avail = H - 98 - 74;                                    // below the header, minus labels and gaps
+      cardH = Math.max(96, Math.min(123, Math.floor(avail * 0.4)));
+      cap = Math.max(60, Math.min(130, Math.floor((avail - 2 * cardH) / 2)));
       $('seg').style.top = '50px';
-      px($('keys'), { left: (W - 316) / 2, top: top });
-      px($('top'), { left: 16, top: top + 208 + 4, width: W - 32 });
-      cardW = (W - 42) / 2; batH = netH;
-      var cardTop = top + 208 + 4 + 58 + 12;
-      px(net, { left: 16, top: cardTop, width: cardW, height: netH });
-      px(bat, { left: 16 + cardW + 10, top: cardTop, width: cardW });
+      keyGeom = { cap: cap, x0: Math.round((W - (2 * cap + 10)) / 2), y0: 86, rowH: cap + 20 };
+      cardW = Math.floor((W - 32 - cardGap) / 2);
+      cardLeft = 16; cardTop = 86 + 2 * (cap + 20) + 10 + 14;
       var pvH = Math.round((W - 32) * 3 / 4);
       px($('pvBox'), { left: 16, top: 72, width: W - 32, height: pvH });
       px($('pCtl'), { left: 16, top: 72 + pvH + 14, width: W - 32 });
     } else {
       $('seg').style.top = '11px';
-      cardW = W >= 640 ? 150 : 128;
-      var right = W - 16, colLeft = right - cardW;
-      var keysArea = colLeft - 16 - 16;                       // left column: keys on top, now playing below
-      var keysLeft = 16 + Math.max(0, (keysArea - 316) / 2);
-      px($('keys'), { left: keysLeft, top: 52 });
-      px($('top'), { left: 16, top: 252, width: Math.max(316, keysArea) });
-      batH = 304 - (52 + netH + 10);
-      px(net, { left: colLeft, top: 52, width: cardW, height: netH });
-      px(bat, { left: colLeft, top: 52 + netH + 10, width: cardW });
+      var gw = W - 32, gTop = 52;
+      cardH = Math.floor((H - 12 - gTop - cardGap) / 2);
+      cap = Math.min(cardH - 20, Math.floor((gw * 0.40 - 10) / 2));
+      keyGeom = { cap: cap, x0: 16, y0: gTop, rowH: cardH };
+      cardLeft = 16 + 2 * cap + 10 + 14;
+      cardW = Math.floor((W - 16 - cardLeft - cardGap) / 2);
+      cardTop = gTop;
       var ctlW = W >= 640 ? 180 : 150;
       px($('pvBox'), { left: 16, top: 42, width: W - 32 - ctlW - 12, height: 264 });
       px($('pCtl'), { left: W - 16 - ctlW, top: 42, width: ctlW });
     }
-    // The System card shares the Batteries slot; renderBatteries() shows whichever applies.
-    var sysCard = $('sys');
-    sysCard.style.left = bat.style.left; sysCard.style.top = bat.style.top;
-    sysCard.style.width = bat.style.width; sysCard.style.height = Math.max(batH, 120) + 'px';
-    batteryRows = Math.max(2, Math.floor((batH - 40) / 30)) * 2;   // max chips that fit, two per row
-    var spark = $('spark'), sw = cardW - 24, sh = 18;
+    [net, sys, bat, topCard].forEach(function (c, i) {
+      var col = i % 2, row = (i - col) / 2;
+      px(c, { left: cardLeft + col * (cardW + cardGap), top: cardTop + row * (cardH + cardGap), width: cardW, height: cardH });
+    });
+    placeKeys();
+    batteryRows = Math.max(2, Math.floor((cardH - 41) / 30)) * 2;   // max chips that fit, two per row
+    var spark = $('spark'), sw = cardW - 24, sh = Math.max(18, Math.min(40, cardH - 92));
     spark.width = sw * 2; spark.height = sh * 2;
     px(spark, { width: sw, height: sh });
     drawSpark(lastHistory); renderBatteries(lastBatteries);
@@ -408,7 +384,7 @@
     for (var i = 0; i < segs.length; i++) (function (s) { tap(s, function () { show(s.getAttribute('data-view')); }); })(segs[i]);
   }
   function sheet(id, on) { $(id).className = 'scrim' + (on ? ' on' : ''); }
-  window.deckHome = function () { memOpen(false); sheet('claude', false); sheet('edit', false); show('deck'); };
+  window.deckHome = function () { memOpen(false); sheet('edit', false); show('deck'); };
 
   // ---------- clock ----------
   var DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -432,11 +408,6 @@
 
   // ---------- keys ----------
   var launcher = { selected: null, all: [] };
-  // A notepad with a pencil: quick capture that becomes a Claude conversation.
-  var CLAUDE_SVG = '<svg width="36" height="36" viewBox="0 0 36 36">' +
-    '<rect x="7" y="5" width="19" height="26" rx="4.5" fill="#fff"/>' +
-    '<path d="M11.5 13h10M11.5 18h10M11.5 23h6" stroke="#c55e39" stroke-width="2.2" stroke-linecap="round"/>' +
-    '<path d="M24 26.5l6.5-6.5 2.5 2.5-6.5 6.5-3.3.8z" fill="#fff" stroke="#c55e39" stroke-width="1.6" stroke-linejoin="round"/></svg>';
   function byPath(p) {
     for (var i = 0; i < launcher.all.length; i++) if (launcher.all[i].path === p) return launcher.all[i];
     return null;
@@ -468,9 +439,7 @@
         }, openEditor));
       })(apps[i]);
     }
-    box.appendChild(key('claude', 'Take note', CLAUDE_SVG, openClaude, function () {
-      xhr('POST', url('/claude'), 'text=', function () { toast('Claude is open on the Mac'); });
-    }));
+    placeKeys();
   }
 
   // ---------- editor (hold any key) ----------
@@ -484,7 +453,7 @@
   function renderEditor() {
     var box = $('editList'), q = $('filter').value.toLowerCase();
     box.innerHTML = '';
-    $('editCount').textContent = draft.length + ' of ' + APP_SLOTS + ' keys · ▲ moves an app earlier';
+    $('editCount').textContent = draft.length + ' of ' + APP_SLOTS + ' apps · ▲ moves an app earlier';
     var chosen = draft.map(byPath).filter(function (a) { return a; });
     var rest = launcher.all.filter(function (a) { return draft.indexOf(a.path) < 0; });
     chosen.concat(rest).forEach(function (a) {
@@ -500,7 +469,7 @@
       });
       row.addEventListener('click', function () {
         if (on) draft.splice(idx, 1);
-        else if (full) return toast('All 7 keys are used: remove one first');
+        else if (full) return toast('All ' + APP_SLOTS + ' keys are used: remove one first');
         else draft.push(a.path);
         renderEditor();
       });
@@ -513,56 +482,9 @@
     xhr('POST', url('/launcher'), 'paths=' + encodeURIComponent(draft.join('\n')), function (s) {
       if (s !== 200) return toast('Save failed');
       launcher.selected = draft.slice();
-      renderKeys(); sheet('edit', false); toast('Keys saved');
+      renderKeys(); sheet('edit', false); toast('Apps saved');
     });
   });
-
-  // ---------- Ask Claude ----------
-  // Modern iPhone over HTTPS: Safari's speech recognition starts listening right away.
-  // Otherwise (the 4S): focus the field so the keyboard's 🎤 dictation key is one tap away.
-  var ask = $('askText');
-  var Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  var canListen = !!(Recognition && window.isSecureContext), rec = null;
-  if (canListen) { $('askMic').style.display = 'block'; ask.placeholder = 'Listening… speak now'; }
-  function listen() {
-    if (rec) { rec.stop(); return; }
-    rec = new Recognition();
-    rec.lang = navigator.language || 'en-US';
-    rec.interimResults = true;
-    rec.continuous = false;
-    var finalText = '';
-    rec.onresult = function (e) {
-      var interim = '';
-      for (var i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) finalText += e.results[i][0].transcript; else interim += e.results[i][0].transcript;
-      }
-      ask.value = finalText + interim;
-    };
-    rec.onerror = function (e) { toast(e.error === 'not-allowed' ? 'Allow microphone + speech for this page' : 'Could not hear you'); };
-    rec.onend = function () {
-      rec = null; $('askMic').className = '';
-      if (finalText) sendAsk();   // stop talking → the chat starts
-    };
-    $('askMic').className = 'live';
-    rec.start();
-  }
-  function openClaude() {
-    sheet('claude', true);
-    if (canListen) { ask.value = ''; listen(); } else ask.focus();   // both must happen inside the tap
-  }
-  function sendAsk() {
-    var text = ask.value.replace(/^\s+|\s+$/g, '');
-    if (!text) { if (!canListen) ask.focus(); return toast('Say or type something first'); }
-    // Always sent: the note opens and starts a fresh conversation in Claude on the Mac.
-    xhr('POST', url('/claude'), 'text=' + encodeURIComponent('Note: ' + text) + '&send=1', function (s) {
-      if (s !== 200) return toast('Could not reach the Mac');
-      ask.value = ''; ask.blur(); sheet('claude', false);
-      toast('Note sent: new Claude chat started');
-    });
-  }
-  tap($('askMic'), listen);
-  tap($('askCancel'), function () { if (rec) rec.abort(); ask.blur(); sheet('claude', false); });
-  tap($('askSend'), sendAsk);
 
   // ---------- widgets ----------
   function fmt(n) { return n >= 100 ? Math.round(n) : n >= 10 ? n.toFixed(0) : n.toFixed(1); }
@@ -622,19 +544,14 @@
     var rows = lastBatteries.slice();
     if (phone) rows.unshift({ name: 'iPhone', kind: 'phone', level: Math.round(phone.level * 100), charging: phone.charging });
     var box = $('batList');
-    // No batteries (e.g. a Mac mini): the slot shows CPU / RAM / disk instead.
-    $('bat').style.display = rows.length ? '' : 'none';
-    $('sys').style.display = rows.length ? 'none' : '';
-    if (!rows.length) return;
     box.innerHTML = '';
+    if (!rows.length) { box.innerHTML = '<div class="empty-note">No wireless accessories connected</div>'; return; }
     var chips = [];
     rows.forEach(function (b) {
       chips.push({ kind: b.kind, level: b.level, charging: b.charging, name: b.name });
       if (b['case'] !== undefined) chips.push({ kind: 'case', level: b['case'], name: b.name + ' case' });
     });
     chips = chips.slice(0, batteryRows);
-    // Shrink the card to fit: title + one 30pt row per two chips.
-    $('bat').style.height = (34 + Math.ceil(chips.length / 2) * 30 + 6) + 'px';
     chips.forEach(function (b) {
       var c = document.createElement('div');
       c.className = 'chip';

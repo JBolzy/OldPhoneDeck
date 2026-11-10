@@ -1,5 +1,4 @@
 import AppKit
-import ApplicationServices
 
 // MARK: Options
 
@@ -150,12 +149,6 @@ let routes: (HTTPRequest, HTTPConnection) -> Void = { req, conn in
         guard Apps.isKnown(path) else { return conn.respond(404, text: "unknown app") }
         DispatchQueue.main.async { Apps.launch(path) }
         conn.respond(text: "ok")
-    case ("POST", "/claude"):
-        let text = (p["text"] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        DispatchQueue.main.async {
-            if text.isEmpty { Claude.focus() } else { Claude.ask(text, autoSend: p["send"] == "1") }
-        }
-        conn.respond(text: "ok")
     case ("GET", "/camera.mjpg"):
         let id = ObjectIdentifier(conn)
         conn.onClose = { server.queue.async { cameraViewers[id] = nil } }
@@ -182,11 +175,7 @@ if let identity = LocalTLS.identity(for: lanIP) {
     } catch { print("⚠️  HTTPS failed to start: \(error)") }
 }
 
-// MARK: Permissions + start
-
-if !AXIsProcessTrustedWithOptions([kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary) {
-    print("⚠️  Grant Accessibility permission (System Settings → Privacy & Security → Accessibility) so Take note can press Return in Claude.")
-}
+// MARK: Start
 
 print("""
 
@@ -194,7 +183,7 @@ OldPhoneDeck is running. On the phone (same Wi-Fi), open Safari and go to:
 
     http://\(lanIP):\(opts.port)/#k=\(token)
 
-Then tap Share → Add to Home Screen. Hold any key to choose your apps.
+Then tap Share → Add to Home Screen. Hold any key to choose your 4 apps.
 
 Modern iPhone (voice, camera, mic): once, open http://\(lanIP):\(opts.port)/oldphonedeck.mobileconfig,
 install it, enable it in Settings → General → About → Certificate Trust Settings,
