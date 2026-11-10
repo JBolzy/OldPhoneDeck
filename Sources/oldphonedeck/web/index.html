@@ -3,8 +3,7 @@
 <head>
 <meta charset="utf-8">
 <!-- OldPhoneDeck: a Stream Deck–style home for a phone in landscape.
-     Must run in iOS 8/9 Safari (iPhone 4S): ES5 syntax only, no fetch, no flex gap, no Intl.
-     Modern iPhones additionally get a Phone tab (camera + mic to the Mac). -->
+     Must run in iOS 8/9 Safari (iPhone 4S): ES5 syntax only, no fetch, no flex gap, no Intl. -->
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -27,20 +26,14 @@
   .view { position: absolute; left: 0; top: 0; right: 0; bottom: 0; display: none; }
   .view.on { display: block; }
 
-  /* ---- status bar ---- */
-  #status { position: absolute; left: 0; right: 0; top: 0; height: 46px; z-index: 5; }
-  /* Lock-screen style: big rounded time, small caps date underneath. */
-  #clock { position: absolute; left: 16px; top: 5px; line-height: 1; }
-  #time { font: 700 24px "SF Pro Rounded", ui-rounded, -apple-system, "Helvetica Neue", sans-serif; letter-spacing: -.6px;
+  /* ---- status bar: one compact row (clock, attention strip, Mac name) ---- */
+  #status { position: absolute; left: 0; right: 0; top: 0; height: 36px; z-index: 5; }
+  #clock { position: absolute; left: 16px; top: 6px; line-height: 24px; white-space: nowrap; }
+  #time { font: 700 22px "SF Pro Rounded", ui-rounded, -apple-system, "Helvetica Neue", sans-serif; letter-spacing: -.6px;
     -webkit-font-feature-settings: "tnum"; font-feature-settings: "tnum"; }
   #ampm { font-size: 10px; font-weight: 700; color: #8e8e93; margin-left: 3px; letter-spacing: .3px; }
-  #date { display: block; margin-top: 3px; font-size: 9px; font-weight: 600; letter-spacing: .9px; text-transform: uppercase; color: #8e8e93; }
-  #seg { position: absolute; left: 50%; top: 11px; margin-left: -66px; width: 132px; height: 22px; display: none;
-    background: rgba(118,118,128,.24); border-radius: 8px; }
-  #seg div { float: left; width: 62px; height: 18px; margin: 2px; line-height: 18px; text-align: center;
-    font-size: 11px; font-weight: 600; color: #c7c7cc; border-radius: 6px; }
-  #seg div.on { background: #636366; color: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.4); }
-  #right { position: absolute; right: 16px; top: 14px; font-size: 11px; font-weight: 600; color: #c7c7cc; white-space: nowrap; }
+  #date { margin-left: 10px; font-size: 9px; font-weight: 600; letter-spacing: .9px; text-transform: uppercase; color: #8e8e93; }
+  #right { position: absolute; right: 16px; top: 10px; font-size: 11px; font-weight: 600; color: #c7c7cc; white-space: nowrap; }
   #link { display: inline-block; width: 6px; height: 6px; border-radius: 3px; background: #ff453a; margin-right: 5px; vertical-align: 1px; }
   #link.ok { background: #30d158; }
   .batt { display: inline-block; width: 20px; height: 9px; border: 1px solid rgba(255,255,255,.5); border-radius: 3px;
@@ -93,8 +86,28 @@
   .sfill { display: block; height: 100%; width: 0; border-radius: 2px; background: #64d2ff; }
   .sfill.mid { background: #ffd60a; }
   .sfill.low { background: #ff453a; }
-  .srow.tap { cursor: pointer; }
-  .srow.tap i { font-style: normal; color: #636366; }
+  .tap { cursor: pointer; }
+  .srow.hero { height: 41px; font-size: 11.5px; color: #f5f5f7; }
+  .srow.hero i { font-style: normal; color: #636366; }
+  .srow.hero b { font-size: 13px; }
+  .srow.hero .sbar { top: 19px; height: 5px; border-radius: 3px; }
+  .srow.hero .sfill { border-radius: 3px; }
+  .spress { position: absolute; left: 0; right: 0; top: 28px; height: 12px; font-size: 9px; color: #8e8e93; white-space: nowrap; }
+  .spress .pr { position: absolute; right: 0; top: 0; display: none; }
+  .spress u { text-decoration: none; font-weight: 600; color: #c7c7cc; }
+  .spress u.mid { color: #ffd60a; }
+  .spress u.low { color: #ff453a; }
+  /* attention strip: hidden while everything is fine */
+  #alert { position: absolute; height: 22px; line-height: 22px; border-radius: 11px; padding: 0 10px; box-sizing: border-box; display: none;
+    font-size: 10.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    background: rgba(255,214,10,.16); color: #ffd60a; box-shadow: inset 0 0 0 .5px rgba(255,214,10,.4); }
+  #alert.bad { background: rgba(255,69,58,.18); color: #ff6961; box-shadow: inset 0 0 0 .5px rgba(255,69,58,.5); }
+  #stage.offline .card { opacity: .35; }
+  #sUp { float: right; font-size: 9px; font-weight: 500; letter-spacing: 0; text-transform: none; color: #636366; }
+  #netLink { position: absolute; right: 12px; top: 11px; font-size: 9px; font-weight: 600; color: #8e8e93; white-space: nowrap; }
+  #netLink.weak { color: #ffd60a; }
+  #netLink.bad { color: #ff453a; }
+  .tp.ol span { color: #64d2ff; }
   /* ---- memory overlay (tap RAM) ---- */
   #mem .sheet { top: 6px; padding: 11px 13px 10px; }
   #mem h2 { margin-bottom: 5px; }
@@ -111,34 +124,13 @@
   .mrow.ol b { right: 66px; line-height: 22px; }
   .ubtn { position: absolute; right: 0; top: 0; height: 22px; line-height: 22px; padding: 0 11px; border-radius: 11px;
     background: #3a3a3c; color: #fff; font-size: 11px; font-weight: 600; }
-  /* ---- top processes: three rows, name left, CPU % right ---- */
+  #top h3 i { font-style: normal; color: #636366; }
+  /* ---- top memory: three apps, name left, size right ---- */
   .tp { position: relative; height: 26px; }
-  .tp span { position: absolute; left: 0; right: 44px; top: 6px; font-size: 10.5px; color: #c7c7cc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .tp b { position: absolute; right: 0; top: 3px; font-size: 14px; font-weight: 600; letter-spacing: -.4px; color: #f5f5f7; }
+  .tp span { position: absolute; left: 0; right: 54px; top: 6px; font-size: 10.5px; color: #c7c7cc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tp b { position: absolute; right: 0; top: 4px; font-size: 12px; font-weight: 600; letter-spacing: -.4px; color: #f5f5f7; }
   .tp b.mid { color: #ffd60a; }
   .tp b.low { color: #ff453a; }
-
-  /* ---- Phone tab (modern iPhones) ---- */
-  #pvBox { position: absolute; left: 16px; top: 42px; height: 264px; border-radius: 18px; overflow: hidden;
-    background: #111114; box-shadow: inset 0 0 0 .5px rgba(255,255,255,.12); }
-  #pv { width: 100%; height: 100%; object-fit: cover; display: block; }
-  #pvOff { position: absolute; left: 0; right: 0; top: 122px; text-align: center; color: #636366; font-size: 12px; }
-  #pCtl { position: absolute; top: 42px; }
-  .pbtn { height: 52px; border-radius: 15px; margin-bottom: 9px; padding: 9px 13px; box-sizing: border-box;
-    background: linear-gradient(180deg, #303036 0%, #1b1b1f 100%);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.10), 0 3px 0 #0a0a0c, 0 6px 12px rgba(0,0,0,.5); }
-  .pbtn b { display: block; font-size: 12px; font-weight: 600; }
-  .pbtn span { display: block; font-size: 10px; color: #8e8e93; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .pbtn.small { height: 36px; padding-top: 11px; }
-  .pbtn.on { background: linear-gradient(180deg, #34c759 0%, #248a3d 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,.25), 0 3px 0 #0f3d1b, 0 6px 14px rgba(52,199,89,.3); }
-  .pbtn.on span { color: #d8f5df; }
-  .pbtn.down { -webkit-transform: translateY(2px); transform: translateY(2px); }
-  #pNote { font-size: 9.5px; color: #8e8e93; line-height: 13px; margin-top: 4px; word-break: break-all; }
-  #pSetup { position: absolute; left: 16px; right: 16px; top: 42px; border-radius: 18px; padding: 14px; background: #1c1c1e;
-    box-shadow: inset 0 0 0 .5px rgba(255,255,255,.1); display: none; }
-  #pSetup h2 { margin: 0 0 10px; font-size: 13px; font-weight: 600; }
-  #pSetup p { margin: 0 0 8px; font-size: 11.5px; line-height: 16px; color: #d1d1d6; }
-  #pSetup a { color: #64d2ff; }
 
   /* ---- sheets ---- */
   .scrim { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: rgba(0,0,0,.55); z-index: 10; display: none; }
@@ -179,44 +171,27 @@
 
   <!-- The deck: 2x2 app keys (left) + 2x2 status cards (right) -->
   <div id="deck" class="view on">
+    <div id="alert"></div>
     <div id="keys"></div>
     <div id="hint">Hold any key to choose apps</div>
-    <div id="top" class="card"><h3>Top CPU</h3><div id="topList"></div></div>
+    <div id="top" class="card tap"><h3>Top memory <i>›</i></h3><div id="topList"></div></div>
     <div id="net" class="card">
-      <h3 id="netTitle">Internet</h3>
+      <h3 id="netTitle">Internet</h3><div id="netLink"></div>
       <div class="big"><span class="arrow">↓</span> <span id="down">–</span><small>Mbps</small></div>
       <div class="sub"><span class="arrow up">↑</span> <span id="up">–</span> Mbps · <span id="ping">–</span> ms</div>
       <canvas id="spark" width="208" height="36"></canvas>
     </div>
     <div id="bat" class="card"><h3>Batteries</h3><div id="batList"></div></div>
-    <div id="sys" class="card"><h3>System</h3>
+    <div id="sys" class="card"><h3>System <span id="sUp"></span></h3>
+      <div class="srow hero tap" id="ramHero"><span>RAM <i>›</i></span><b id="sRam">–</b><span class="sbar"><span class="sfill" id="sRamBar"></span></span>
+        <div class="spress"><span><span id="sPressLbl">Pressure </span><u id="sPress">–</u></span><span class="pr" id="sSwapBox"><u id="sSwap">–</u> swap</span></div></div>
       <div class="srow"><span>CPU</span><b id="sCpu">–</b><span class="sbar"><span class="sfill" id="sCpuBar"></span></span></div>
-      <div class="srow tap"><span>RAM <i>›</i></span><b id="sRam">–</b><span class="sbar"><span class="sfill" id="sRamBar"></span></span></div>
       <div class="srow"><span>Disk</span><b id="sDisk">–</b><span class="sbar"><span class="sfill" id="sDiskBar"></span></span></div>
-      <div class="srow"><span>Updates</span><b id="sUpd">–</b></div>
-    </div>
-  </div>
-
-  <!-- Modern iPhones only: camera + mic to the Mac (needs HTTPS) -->
-  <div id="phone" class="view">
-    <div id="pvBox"><video id="pv" playsinline muted autoplay></video><div id="pvOff">Camera off</div></div>
-    <div id="pCtl">
-      <div class="pbtn" id="pCam"><b>Camera</b><span>Off</span></div>
-      <div class="pbtn" id="pMic"><b>Microphone</b><span>Off</span></div>
-      <div class="pbtn small" id="pFlip"><b>Flip camera</b></div>
-      <div id="pNote"></div>
-    </div>
-    <div id="pSetup">
-      <h2>One-time setup for camera &amp; mic</h2>
-      <p>1. <a href="/oldphonedeck.mobileconfig">Download the OldPhoneDeck profile</a>, tap <b>Allow</b>, then Settings → <b>Profile Downloaded</b> → Install.</p>
-      <p>2. Settings → General → About → <b>Certificate Trust Settings</b> → turn on OldPhoneDeck CA.</p>
-      <p>3. Open the <a id="httpsLink" href="#">secure deck</a>, then Share → Add to Home Screen.</p>
     </div>
   </div>
 
   <div id="status">
     <div id="clock"><span id="time">–</span><span id="ampm"></span><span id="date"></span></div>
-    <div id="seg"><div data-view="deck" class="on">Deck</div><div data-view="phone">Phone</div></div>
     <div id="right"><span id="link"></span><span id="macName">Mac</span><span id="phoneBatt" style="display:none"><span class="batt"><i id="phoneBattFill"></i></span></span></div>
   </div>
 
@@ -324,67 +299,48 @@
     }
   }
   function layout() {
-    // Two 2x2 grids: app keys on the left, status cards (Internet, System / Batteries, Top CPU) on the right.
+    // Two 2x2 grids: app keys on the left, status cards (Internet, System / Batteries, Top memory) on the right.
     // Portrait (modern phones upright): keys on top, the cards in a 2x2 grid below.
     var net = $('net'), bat = $('bat'), sys = $('sys'), topCard = $('top');
     var cardW, cardH, cap, cardLeft, cardTop, cardGap = 10;
     $('hint').style.display = 'none';
     if (portrait) {
-      var avail = H - 98 - 74;                                    // below the header, minus labels and gaps
+      var gTopP = 72;                                             // portrait: the attention strip sits at y=42
+      var avail = H - gTopP - 12 - 74;                            // below the header, minus labels and gaps
       cardH = Math.max(96, Math.min(123, Math.floor(avail * 0.4)));
       cap = Math.max(60, Math.min(130, Math.floor((avail - 2 * cardH) / 2)));
-      $('seg').style.top = '50px';
-      keyGeom = { cap: cap, x0: Math.round((W - (2 * cap + 10)) / 2), y0: 86, rowH: cap + 20 };
+      keyGeom = { cap: cap, x0: Math.round((W - (2 * cap + 10)) / 2), y0: gTopP, rowH: cap + 20 };
       cardW = Math.floor((W - 32 - cardGap) / 2);
-      cardLeft = 16; cardTop = 86 + 2 * (cap + 20) + 10 + 14;
-      var pvH = Math.round((W - 32) * 3 / 4);
-      px($('pvBox'), { left: 16, top: 72, width: W - 32, height: pvH });
-      px($('pCtl'), { left: 16, top: 72 + pvH + 14, width: W - 32 });
+      cardLeft = 16; cardTop = gTopP + 2 * (cap + 20) + 10 + 14;
+      var pal = $('alert'); pal.style.left = '16px'; pal.style.right = 'auto'; pal.style.top = '42px'; pal.style.maxWidth = (W - 32) + 'px';
     } else {
-      $('seg').style.top = '11px';
-      var gw = W - 32, gTop = 52;
+      var gw = W - 32, gTop = 42;
       cardH = Math.floor((H - 12 - gTop - cardGap) / 2);
       cap = Math.min(cardH - 20, Math.floor((gw * 0.40 - 10) / 2));
       keyGeom = { cap: cap, x0: 16, y0: gTop, rowH: cardH };
       cardLeft = 16 + 2 * cap + 10 + 14;
       cardW = Math.floor((W - 16 - cardLeft - cardGap) / 2);
       cardTop = gTop;
-      var ctlW = W >= 640 ? 180 : 150;
-      px($('pvBox'), { left: 16, top: 42, width: W - 32 - ctlW - 12, height: 264 });
-      px($('pCtl'), { left: W - 16 - ctlW, top: 42, width: ctlW });
+      var al = $('alert'); al.style.left = 'auto'; al.style.top = '7px';   // between the clock and the Mac name
     }
     [net, sys, bat, topCard].forEach(function (c, i) {
       var col = i % 2, row = (i - col) / 2;
       px(c, { left: cardLeft + col * (cardW + cardGap), top: cardTop + row * (cardH + cardGap), width: cardW, height: cardH });
     });
     placeKeys();
+    $('netLink').style.display = cardW >= 140 ? '' : 'none';   // no room next to the title on a narrow card
     batteryRows = Math.max(2, Math.floor((cardH - 41) / 30)) * 2;   // max chips that fit, two per row
     var spark = $('spark'), sw = cardW - 24, sh = Math.max(18, Math.min(40, cardH - 92));
     spark.width = sw * 2; spark.height = sh * 2;
     px(spark, { width: sw, height: sh });
     drawSpark(lastHistory); renderBatteries(lastBatteries);
+    renderAlerts();
   }
   window.addEventListener('resize', fit);
   window.addEventListener('orientationchange', function () { setTimeout(fit, 300); });
 
-  // ---------- views (Deck, plus Phone on modern iPhones) ----------
-  var view = 'deck';
-  function show(name) {
-    view = name;
-    $('deck').className = 'view' + (name === 'deck' ? ' on' : '');
-    $('phone').className = 'view' + (name === 'phone' ? ' on' : '');
-    var segs = $('seg').children;
-    for (var i = 0; i < segs.length; i++) segs[i].className = segs[i].getAttribute('data-view') === name ? 'on' : '';
-    if (name === 'phone') phoneEnter(); else pollStats();
-    store('view', name);
-  }
-  if (modern) {
-    $('seg').style.display = 'block';
-    var segs = $('seg').children;
-    for (var i = 0; i < segs.length; i++) (function (s) { tap(s, function () { show(s.getAttribute('data-view')); }); })(segs[i]);
-  }
   function sheet(id, on) { $(id).className = 'scrim' + (on ? ' on' : ''); }
-  window.deckHome = function () { memOpen(false); sheet('edit', false); show('deck'); };
+  window.deckHome = function () { memOpen(false); sheet('edit', false); };
 
   // ---------- clock ----------
   var DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -563,29 +519,83 @@
       box.appendChild(c);
     });
   }
-  function renderSys(s, upd) {
+  function renderSys(s) {
     s = s || {};
-    function row(id, pct, text, tip) {
+    function row(id, pct, text, tip, level) {
       $(id).textContent = text;
       $(id).parentNode.title = tip || '';
       var bar = $(id + 'Bar');
       bar.style.width = Math.max(0, Math.min(100, pct)) + '%';
-      bar.className = 'sfill' + (pct >= 90 ? ' low' : pct >= 75 ? ' mid' : '');
+      bar.className = 'sfill' + (level ? ' ' + level : pct >= 90 ? ' low' : pct >= 75 ? ' mid' : '');
     }
     var GB = 1073741824;
     function gb(n) { return (n / GB).toFixed(n < 10 * GB ? 1 : 0); }
+    if (s.uptime) {
+      var up = Math.floor(s.uptime / 60), dd = Math.floor(up / 1440), hh = Math.floor(up % 1440 / 60);
+      $('sUp').textContent = 'up ' + (dd ? dd + 'd ' + hh + 'h' : hh ? hh + 'h ' + up % 60 + 'm' : up + 'm');
+    }
     if (s.cpu !== undefined) row('sCpu', s.cpu, Math.round(s.cpu) + '%');
-    if (s.ramTotal) row('sRam', s.ramUsed / s.ramTotal * 100, gb(s.ramUsed) + ' / ' + gb(s.ramTotal) + ' GB');
+    if (s.ramTotal) {
+      // macOS keeps RAM nearly full on purpose; memory pressure is what says whether that is a problem.
+      var lv = s.pressure === 'critical' ? 'low' : s.pressure === 'warn' ? 'mid' : '';
+      row('sRam', s.ramUsed / s.ramTotal * 100, gb(s.ramUsed) + ' / ' + gb(s.ramTotal) + ' GB', '', lv || 'ok');
+      $('sPress').textContent = s.pressure === 'critical' ? 'Critical' : s.pressure === 'warn' ? 'Warning' : 'Normal';
+      $('sPress').className = lv;
+      $('sSwap').textContent = mbText(s.swapMB || 0);
+      $('sSwap').className = (s.swapMB || 0) >= 2048 ? 'mid' : '';
+      var showSwap = s.swapMB >= 1024;   // swap is only worth a mention once it is real
+      $('sSwapBox').style.display = showSwap ? 'block' : 'none';
+      $('sPressLbl').style.display = showSwap ? 'none' : '';   // no room for both labels
+    }
     if (s.diskTotal) {
-      var used = s.diskTotal - s.diskFree;
-      row('sDisk', used / s.diskTotal * 100, gb(s.diskFree) + ' GB free', gb(used) + ' GB used of ' + gb(s.diskTotal) + ' GB');
+      var used = s.diskTotal - s.diskFree, freePct = s.diskFree / s.diskTotal * 100;
+      row('sDisk', used / s.diskTotal * 100, gb(s.diskFree) + ' GB free', gb(used) + ' GB used of ' + gb(s.diskTotal) + ' GB',
+        freePct < 5 ? 'low' : freePct < 15 ? 'mid' : 'ok');
     }
-    if (upd && upd.count !== undefined) {
-      var u = $('sUpd');
-      u.textContent = upd.count ? upd.count + ' available' : 'Up to date';
-      u.style.color = upd.count ? '#ffd60a' : '';
-      u.parentNode.title = (upd.titles || []).join('\n');
+  }
+  function renderLink(l) {
+    var el = $('netLink');
+    if (!l || !l.type) { el.textContent = ''; return; }
+    var r = l.rate ? (l.rate >= 1000 ? (l.rate / 1000).toFixed(l.rate % 1000 ? 1 : 0) + ' Gb' : Math.round(l.rate) + ' Mb') : '';
+    el.textContent = (l.type === 'wifi' ? 'Wi-Fi' : 'Ethernet') + (r ? ' ' + r : '');
+    el.className = l.type === 'wifi' && l.rssi && l.rssi <= -80 ? 'bad' : l.type === 'wifi' && l.rssi && l.rssi <= -70 ? 'weak' : '';
+    el.title = l.type === 'wifi' && l.rssi ? 'Signal ' + l.rssi + ' dBm' : '';
+  }
+  // ---------- attention strip + offline state ----------
+  var lastStats = null, pollFails = 0, offline = false, lastSeen = '';
+  function renderAlerts() {
+    var items = [], d = lastStats || {}, s = d.sys || {};
+    function add(text, sev) { items.push({ t: text, sev: sev, i: items.length }); }
+    if (offline) add('Offline' + (lastSeen ? ' · last seen ' + lastSeen : ''), 2);
+    else {
+      if (s.pressure === 'critical') add('Memory critical', 2);
+      else if (s.pressure === 'warn') add('Memory pressure', 1);
+      if ((s.swapMB || 0) >= 2048) add('Swap ' + mbText(s.swapMB), 1);
+      if (s.diskTotal) {
+        var fp = s.diskFree / s.diskTotal * 100;
+        if (fp < 5) add('Disk ' + Math.round(fp) + '% free', 2);
+        else if (fp < 15) add('Disk ' + Math.round(fp) + '% free', 1);
+      }
+      var n = d.updates && d.updates.count, h = d.health || {}, l = d.link || {};
+      if (h.throttle) add('CPU throttled to ' + h.throttle + '%', 1);
+      (h.agents || []).forEach(function (a) { add('Agent failed: ' + a.replace(/^com\./, ''), 2); });
+      if (l.type === 'wifi' && l.rssi && l.rssi <= -75) add('Weak Wi-Fi', 1);
+      if (n) add(n + ' macOS update' + (n > 1 ? 's' : ''), 1);
     }
+    items.sort(function (a, b) { return b.sev - a.sev || a.i - b.i; });
+    var all = items.map(function (x) { return x.t; });
+    var el = $('alert');
+    el.textContent = all.join(' · ');   // most serious first; CSS ellipsis cuts it, the tooltip has it all
+    el.title = all.join('\n');
+    el.className = items.length && items[0].sev === 2 ? 'bad' : '';
+    el.style.display = items.length ? 'block' : 'none';
+    $('macName').style.display = items.length && !portrait ? 'none' : '';   // the strip takes the Mac name's place
+    if (!portrait) {
+      var edge = 16 + $('right').offsetWidth + 8;   // keep clear of the connection dot
+      el.style.right = edge + 'px';
+      el.style.maxWidth = Math.max(0, W - edge - (16 + $('clock').offsetWidth + 12)) + 'px';
+    }
+    $('stage').className = offline ? 'offline' : '';
   }
   // ---------- memory overlay ----------
   var memTimer = null, memOlKey = '';
@@ -604,6 +614,7 @@
       var lv = d.pressure === 'critical' ? 'low' : d.pressure === 'warn' ? 'mid' : '';
       var word = d.pressure === 'critical' ? 'Critical' : d.pressure === 'warn' ? 'Warning' : 'Normal';
       $('memStat').innerHTML = 'Pressure <b class="' + lv + '">' + word + '</b> · Swap <b>' + mbText(d.swapMB || 0) + '</b>';
+      renderTop(d.apps, d.ollama);
       var apps = (d.apps || []).slice(0, 10), top = apps.length ? apps[0].mb : 1, html = '';
       for (i = 0; i < apps.length; i++) {
         html += '<div class="mrow"><span>' + esc(apps[i].name) + '</span><b>' + mbText(apps[i].mb) + '</b>' +
@@ -632,7 +643,7 @@
       });
     });
   }
-  tap($('sRam').parentNode, function () { memOpen(true); });
+  tap($('ramHero'), function () { memOpen(true); });
   (function () {
     var scr = $('mem');
     function outside(e) { if (e.target === scr) memOpen(false); }
@@ -641,11 +652,16 @@
   })();
 
   function pollStats() {
-    if (view !== 'deck') return;
     xhr('GET', url('/stats'), null, function (s, text) {
       $('link').className = s === 200 ? 'ok' : '';
-      if (s !== 200) return;
+      if (s !== 200) {
+        if (++pollFails >= 2 && !offline) { offline = true; renderAlerts(); }
+        return;
+      }
+      pollFails = 0; offline = false;
       var d = JSON.parse(text);
+      lastStats = d;
+      lastSeen = $('time').textContent + ($('ampm').textContent ? ' ' + $('ampm').textContent : '');
       if (d.now) { clockSkew = d.now * 1000 - new Date().getTime(); clockTz = d.tz || 0; tick(); }
       $('macName').textContent = d.mac.replace(/^\S+['’]s?\s+/, '');
       var sp = d.speed || {};
@@ -656,8 +672,9 @@
       $('netTitle').textContent = sp.running ? 'Testing…' : 'Internet';
       drawSpark(d.net.history);
       renderBatteries(d.batteries);
-      renderSys(d.sys, d.updates);
-      renderTop(d.top);
+      renderSys(d.sys);
+      renderLink(d.link);
+      renderAlerts();
     });
   }
   setInterval(pollStats, 2000);
@@ -665,134 +682,32 @@
     xhr('POST', url('/speedtest'), '', function () { $('netTitle').textContent = 'Testing…'; toast('Running a speed test (~20 s)'); });
   });
 
-  // ---------- top CPU processes ----------
-  function renderTop(list) {
-    list = (list || []).slice(0, 3);
-    var box = $('topList');
+  // ---------- top memory ----------
+  // Top memory card: the three biggest apps (helpers rolled up), from the same /memory data as the overlay.
+  // A loaded Ollama model takes the third line: it is usually the biggest thing you chose to put in memory.
+  function renderTop(apps, ollama) {
+    var box = $('topList'), rows = (apps || []).slice(0, ollama && ollama.length ? 2 : 3);
     box.innerHTML = '';
-    list.forEach(function (p) {
+    if (ollama && ollama.length) rows.push({ name: ollama[0].name, mb: ollama[0].mb, ol: true });   // cyan, titled "Ollama"
+    rows.forEach(function (p) {
       var c = document.createElement('div');
-      c.className = 'tp';
+      c.className = 'tp' + (p.ol ? ' ol' : '');
       c.innerHTML = '<span></span><b></b>';
       c.firstChild.textContent = p.name;
-      c.title = p.name;
+      c.title = (p.ol ? 'Ollama · ' : '') + p.name;
       var v = c.lastChild;
-      v.textContent = Math.round(p.cpu) + '%';
-      v.className = p.cpu >= 150 ? 'low' : p.cpu >= 80 ? 'mid' : '';
+      v.textContent = mbText(p.mb);
+      v.className = p.mb >= 16384 ? 'low' : p.mb >= 8192 ? 'mid' : '';
       box.appendChild(c);
     });
   }
-
-  // ---------- Phone tab: camera + mic to the Mac over a secure WebSocket ----------
-  // Messages: 1 type byte + payload. 'H' token, 'V' JPEG frame, 'A' 16 kHz mono s16le PCM.
-  // The Mac turns 'V' into its /camera.mjpg feed (OBS) and plays 'A' into BlackHole (the mic).
-  // Ports: plain http = base, https = base+2, secure WebSocket = base+3.
-  var secure = location.protocol === 'https:', here = Number(location.port || (secure ? 443 : 80));
-  var httpPort = secure ? here - 2 : here, wssPort = httpPort + 3;
-  var ws = null, camStream = null, micStream = null, facing = 'user', frameTimer = null, encoding = false;
-  var audioCtx = null, micNode = null, pv = $('pv');
-  function pack(t, bytes) {
-    var b = new Uint8Array(bytes.length + 1);
-    b[0] = t.charCodeAt(0); b.set(bytes, 1);
-    return b.buffer;
+  function topPoll() {
+    if (offline) return;
+    xhr('GET', url('/memory'), null, function (st, text) { if (st === 200) { var m = JSON.parse(text); renderTop(m.apps, m.ollama); } });
   }
-  function wsReady() { return ws && ws.readyState === 1; }
-  function wsOpen() {
-    if (ws) return;
-    ws = new WebSocket('wss://' + location.hostname + ':' + wssPort + '/');
-    ws.binaryType = 'arraybuffer';
-    ws.onopen = function () { ws.send(pack('H', new TextEncoder().encode(token))); phoneStatus(); };
-    ws.onclose = function () {
-      ws = null; phoneStatus();
-      if (camStream || micStream) setTimeout(wsOpen, 2000);   // Mac restarted or Wi-Fi blip
-    };
-  }
-  function phoneEnter() {
-    if (!window.isSecureContext) {
-      $('pvBox').style.display = $('pCtl').style.display = 'none';
-      $('pSetup').style.display = 'block';
-      $('httpsLink').href = 'https://' + location.hostname + ':' + (httpPort + 2) + '/#k=' + token;
-      return;
-    }
-    phoneStatus();
-  }
-  function phoneStatus() {
-    $('pCam').className = 'pbtn' + (camStream ? ' on' : '');
-    $('pMic').className = 'pbtn' + (micStream ? ' on' : '');
-    $('pCam').lastChild.textContent = camStream ? (wsReady() ? 'Streaming to Mac' : 'Connecting…') : 'Off';
-    $('pMic').lastChild.textContent = micStream ? (wsReady() ? 'Streaming → BlackHole' : 'Connecting…') : 'Off';
-    $('pvOff').style.display = camStream ? 'none' : '';
-    $('pNote').textContent = 'OBS Media Source: http://localhost:' + httpPort + '/camera.mjpg?k=' + token +
-      ' · Mic: choose “BlackHole 2ch” in your call app.';
-  }
-  function sendFrame() {
-    if (!wsReady() || encoding || ws.bufferedAmount > 400000 || !pv.videoWidth) return;   // drop frames, never lag
-    var c = sendFrame.canvas || (sendFrame.canvas = document.createElement('canvas'));
-    var w = 960, h = Math.round(960 * pv.videoHeight / pv.videoWidth);
-    c.width = w; c.height = h;
-    c.getContext('2d').drawImage(pv, 0, 0, w, h);
-    encoding = true;
-    c.toBlob(function (blob) {
-      if (!blob) { encoding = false; return; }
-      blob.arrayBuffer().then(function (ab) {
-        encoding = false;
-        if (wsReady()) ws.send(pack('V', new Uint8Array(ab)));
-      });
-    }, 'image/jpeg', 0.6);
-  }
-  function startCam() {
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false })
-      .then(function (s) {
-        camStream = s; pv.srcObject = s; pv.play();
-        wsOpen();
-        frameTimer = setInterval(sendFrame, 1000 / 15);
-        phoneStatus();
-      }, function () { toast('Camera blocked: allow it for this page'); });
-  }
-  function stopCam() {
-    clearInterval(frameTimer);
-    if (camStream) camStream.getTracks().forEach(function (t) { t.stop(); });
-    camStream = null; pv.srcObject = null; phoneStatus();
-  }
-  function startMic() {
-    var AC = window.AudioContext || window.webkitAudioContext;
-    audioCtx = new AC();   // created inside the tap so iOS lets it run
-    navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true }, video: false })
-      .then(function (s) {
-        micStream = s;
-        var src = audioCtx.createMediaStreamSource(s);
-        micNode = audioCtx.createScriptProcessor(4096, 1, 1);
-        var ratio = audioCtx.sampleRate / 16000;
-        micNode.onaudioprocess = function (e) {
-          if (!wsReady()) return;
-          var input = e.inputBuffer.getChannelData(0), n = Math.floor(input.length / ratio), out = new Int16Array(n);
-          for (var i = 0; i < n; i++) {   // average each window: a cheap low-pass while downsampling to 16 kHz
-            var a = Math.floor(i * ratio), b = Math.floor((i + 1) * ratio), sum = 0;
-            for (var j = a; j < b; j++) sum += input[j];
-            var v = sum / Math.max(1, b - a);
-            out[i] = v < -1 ? -32768 : v > 1 ? 32767 : v * 32767;
-          }
-          ws.send(pack('A', new Uint8Array(out.buffer)));
-        };
-        src.connect(micNode); micNode.connect(audioCtx.destination);   // outputs silence; keeps the node running
-        wsOpen(); phoneStatus();
-      }, function () { toast('Microphone blocked: allow it for this page'); audioCtx.close(); audioCtx = null; });
-  }
-  function stopMic() {
-    if (micNode) micNode.disconnect();
-    if (micStream) micStream.getTracks().forEach(function (t) { t.stop(); });
-    if (audioCtx) audioCtx.close();
-    micStream = micNode = audioCtx = null; phoneStatus();
-  }
-  if (modern) {
-    tap($('pCam'), function () { if (camStream) stopCam(); else startCam(); });
-    tap($('pMic'), function () { if (micStream) stopMic(); else startMic(); });
-    tap($('pFlip'), function () {
-      facing = facing === 'user' ? 'environment' : 'user';
-      if (camStream) { stopCam(); startCam(); }
-      toast(facing === 'user' ? 'Front camera' : 'Back camera');
-    });
-  }
+  setInterval(topPoll, 10000);
+  setTimeout(topPoll, 800);
+  tap($('top'), function () { memOpen(true); });
 
   // ---------- boot ----------
   function connect() {
@@ -801,7 +716,7 @@
       if (s !== 200) { $('link').className = ''; setTimeout(connect, 2000); return; }
       sheet('login', false);
       loadKeys();
-      show(modern && store('view') === 'phone' ? 'phone' : 'deck');
+      pollStats();
       if (/edit/.test(location.search)) setTimeout(openEditor, 300);
     });
   }

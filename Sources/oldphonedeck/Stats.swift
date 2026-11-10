@@ -10,8 +10,9 @@ final class Stats {
     private var testing = false
     private var batteries: [[String: Any]] = []
     private var sys: [String: Any] = [:]
-    private var top: [[String: Any]] = []
     private var updates: [String: Any] = [:]
+    private var link: [String: Any] = [:]
+    private var health: [String: Any] = [:]
     private var lastTicks: [UInt32]?
     private var sysTick = 0
 
@@ -25,18 +26,22 @@ final class Stats {
         // Battery reads shell out (system_profiler takes ~1 s), so keep them off the stats queue.
         batt.setEventHandler { [weak self] in DispatchQueue.global().async { self?.refreshBatteries() } }
         batt.resume()
-        let proc = DispatchSource.makeTimerSource(queue: queue)
-        proc.schedule(deadline: .now(), repeating: 3)
-        proc.setEventHandler { [weak self] in DispatchQueue.global().async { self?.refreshTop() } }
-        proc.resume()
         // `softwareupdate -l` contacts Apple and can take a while, so it runs rarely and off the stats queue.
         let upd = DispatchSource.makeTimerSource(queue: queue)
         upd.schedule(deadline: .now() + 20, repeating: 6 * 3600)
         upd.setEventHandler { [weak self] in DispatchQueue.global().async { self?.refreshUpdates() } }
         upd.resume()
-        timers = [net, batt, proc, upd]
-        // First speed test shortly after launch so the widget isn't empty.
-        queue.asyncAfter(deadline: .now() + 5) { [weak self] in self?.runSpeedTest() }
+        // CPU throttling, failed LaunchAgents and the network link: cheap shell-outs, every 30 s.
+        let hl = DispatchSource.makeTimerSource(queue: queue)
+        hl.schedule(deadline: .now() + 2, repeating: 30)
+        hl.setEventHandler { [weak self] in DispatchQueue.global().async { self?.refreshHealth() } }
+        hl.resume()
+        // Speed test: once shortly after launch so the widget isn't empty, then every 6 hours (it saturates the link for ~20 s).
+        let spd = DispatchSource.makeTimerSource(queue: queue)
+        spd.schedule(deadline: .now() + 5, repeating: 6 * 3600)
+        spd.setEventHandler { [weak self] in self?.runSpeedTest() }
+        spd.resume()
+        timers = [net, batt, upd, hl, spd]
     }
     private var timers: [DispatchSourceTimer] = []
 
@@ -50,8 +55,9 @@ final class Stats {
                 "speed": s,
                 "batteries": batteries,
                 "sys": sys,
-                "top": top,
                 "updates": updates,
+                "link": link,
+                "health": health,
                 "mac": Host.current().localizedName ?? "Mac",
                 "now": Date().timeIntervalSince1970,
                 "tz": TimeZone.current.secondsFromGMT(),
@@ -92,6 +98,9 @@ final class Stats {
             sys["ramUsed"] = pages * Double(sysconf(_SC_PAGESIZE))
             sys["ramTotal"] = Double(ProcessInfo.processInfo.physicalMemory)
         }
+        if let up = Health.uptime() { sys["uptime"] = up }
+        sys["pressure"] = MemoryStats.pressure()
+        sys["swapMB"] = MemoryStats.swapUsedMB()
 
         if sysTick % 30 == 0,
            let v = try? URL(fileURLWithPath: "/").resourceValues(forKeys: [.volumeTotalCapacityKey, .volumeAvailableCapacityForImportantUsageKey]),
@@ -102,22 +111,16 @@ final class Stats {
         sysTick += 1
     }
 
-    // MARK: Top processes and pending macOS updates
+    // MARK: Health: throttling, failed agents, network link
 
-    private func refreshTop() {
-        guard let data = Stats.run("/bin/ps", ["-Aceo", "pcpu=,comm=", "-r"], timeout: 5),
-              let text = String(data: data, encoding: .utf8) else { return }
-        var out: [[String: Any]] = []
-        for line in text.split(separator: "\n") {
-            let t = line.trimmingCharacters(in: .whitespaces)
-            guard let sp = t.firstIndex(of: " "), let cpu = Double(t[..<sp]) else { continue }
-            let name = t[sp...].trimmingCharacters(in: .whitespaces)
-            if name == "ps" { continue }
-            out.append(["name": name, "cpu": cpu])
-            if out.count == 3 { break }
-        }
-        queue.async { self.top = out }
+    private func refreshHealth() {
+        var h: [String: Any] = ["agents": Health.failedAgents()]
+        if let limit = Health.cpuSpeedLimit() { h["throttle"] = limit }
+        let l = Health.link() ?? [:]
+        queue.async { self.health = h; self.link = l }
     }
+
+    // MARK: Pending macOS updates
 
     private func refreshUpdates() {
         // The "No new software" message goes to stderr, so success with no "* Label:" lines means up to date.

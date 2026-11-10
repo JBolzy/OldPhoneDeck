@@ -12,12 +12,12 @@ No jailbreak, no App Store, nothing to install on the phone: it runs in Safari, 
 ## Features
 
 - **4 big keys:** a 2x2 grid of Mac apps of your choice. Tap a key and the app opens on your Mac. Hold any key to pick apps.
-- **Top CPU:** the three busiest processes on the Mac, refreshed every few seconds. The four status cards (Internet, System, Batteries, Top CPU) form a 2x2 grid beside the keys.
-- **Internet widget:** download, upload and ping (macOS's built-in `networkQuality`), plus a live traffic graph. Tap it to re-test.
+- **Top memory:** the three biggest apps by memory (helper processes rolled up under their app), plus the loaded Ollama model when there is one. Tap it, or tap RAM, for the full list. The four status cards (Internet, System, Batteries, Top memory) form a 2x2 grid beside the keys.
+- **Attention strip:** stays hidden until something needs you (memory pressure or heavy swap, low disk, pending macOS updates, CPU throttling, a failed LaunchAgent, weak Wi-Fi), and turns red with "Offline · last seen …" if the Mac stops answering.
+- **Internet widget:** download, upload and ping (macOS's built-in `networkQuality`, re-run every 6 hours), a live traffic graph, and the link in use (Wi-Fi rate or Ethernet speed). Tap it to re-test.
 - **Batteries widget:** MacBook, Magic Keyboard / Mouse / Trackpad and AirPods (with case), each as an icon + percentage.
-- **System widget:** CPU, RAM, free disk space and pending macOS updates. Tap RAM for the top apps by memory, memory pressure and swap (plus an Unload button for a loaded Ollama model).
+- **System widget:** RAM (coloured by memory pressure, with swap), CPU, free disk space and the Mac's uptime. Tap RAM for the top apps by memory, memory pressure and swap (plus an Unload button for a loaded Ollama model).
 - **Fits any iPhone:** a compact 480×320 layout on old phones; full-width landscape and a portrait layout on modern ones.
-- **Modern iPhones also get:** a **Phone** tab that streams the camera (into OBS) and the mic (into BlackHole) to your Mac.
 
 ## Requirements
 
@@ -42,50 +42,35 @@ It prints a link like `http://192.168.x.x:8045/#k=<token>`. On the phone:
 
 Tips for a dedicated desk display: set **Auto-Lock → Never**, and use **Guided Access** (Settings → Accessibility) to lock the phone to the deck.
 
-### Modern iPhone: voice, camera and mic (optional)
-
-Safari only allows the microphone, camera and speech recognition on **HTTPS** pages, so OldPhoneDeck creates a private certificate authority on your Mac (stored in `~/.oldphonedeck/tls`).
-
-1. On the iPhone, open `http://<mac-ip>:8045/oldphonedeck.mobileconfig` and tap **Allow**.
-2. **Settings → Profile Downloaded → Install.**
-3. **Settings → General → About → Certificate Trust Settings** → turn on **OldPhoneDeck CA**. *(Easy to miss: without it Safari keeps saying "This Connection Is Not Private".)*
-4. Open `https://<mac-ip>:8047/#k=<token>` and add it to the Home Screen.
-
-**Camera → video calls:** in [OBS](https://obsproject.com), add a *Media Source* with `http://localhost:8045/camera.mjpg?k=<token>`, then click **Start Virtual Camera**.
-**Mic → video calls:** install [BlackHole 2ch](https://existential.audio/blackhole/) and restart OldPhoneDeck; pick "BlackHole 2ch" as the microphone in your call app.
-*(For plain FaceTime or Zoom calls, macOS's built-in Continuity Camera is simpler.)*
-
 ## How it works
 
 ```
 iPhone (Safari)                     Mac: oldphonedeck (Swift, no dependencies)
 ┌──────────────────────┐  Wi-Fi    ┌───────────────────────────────────────────────────┐
-│ deck page            │ ────────▶ │ :8045 HTTP   page, apps, stats                  │
-│ (ES5 JavaScript so   │           │ :8047 HTTPS  same, for modern iPhones             │
-│  iOS 8/9 can run it) │ ────────▶ │ :8048 WSS    camera frames + mic audio            │
+│ deck page            │ ────────▶ │ :8045 HTTP   page, apps, stats                    │
+│ (ES5 JavaScript so   │           │                                                   │
+│  iOS 8/9 can run it) │           │                                                   │
 └──────────────────────┘           └───────────────────────────────────────────────────┘
 ```
 
 | Feature | Mac side |
 |---|---|
 | App keys | `NSWorkspace` lists `/Applications`, renders icons, opens apps |
-| Top CPU | `ps -Aceo pcpu=,comm= -r` every 3 s |
 | System | `host_statistics` (CPU), `host_statistics64` (RAM), volume capacity of `/`, and `softwareupdate -l` every 6 h for pending updates |
 | Memory (tap RAM) | `top -l 1 -o mem` (footprint, grouped by parent app), `sysctl` for pressure and swap, `ollama ps` / `ollama stop` |
 | Internet | `/usr/bin/networkQuality -c` + `en*` interface byte counters |
 | Batteries | IOKit power sources, `ioreg -r -k BatteryPercent`, `system_profiler SPBluetoothDataType` |
-| HTTPS | Local CA and server certificate generated with the built-in `openssl`, served as an iOS profile |
+| Health | `kern.boottime` (uptime), `pmset -g therm` (throttling), `launchctl list` (failed agents in `~/Library/LaunchAgents`), `route`/CoreWLAN/`ifconfig` (network link) |
 
 The whole phone UI is one file, [`Sources/oldphonedeck/web/index.html`](Sources/oldphonedeck/web/index.html). It's deliberately written in ES5 (no arrow functions, `let`, `fetch`…) so iOS 8/9 Safari can run it.
 
 ## Options
 
 ```
-oldphonedeck --port 8045           # HTTP port (HTTPS = port+2, WebSocket = port+3)
-oldphonedeck --mic-device NAME     # audio output that receives the phone's mic (default: BlackHole)
+oldphonedeck --port 8045           # HTTP port
 ```
 
-Settings live in `~/.oldphonedeck/`: `token` (the access code), `launcher.json` (your keys) and `tls/` (certificates).
+Settings live in `~/.oldphonedeck/`: `token` (the access code), and `launcher.json` (your keys).
 
 ## Security
 
@@ -98,8 +83,6 @@ Settings live in `~/.oldphonedeck/`: `token` (the access code), `launcher.json` 
 | Problem | Fix |
 |---|---|
 | Phone shows a blank page | Is the Mac on the same Wi-Fi? Check the printed IP. Old iOS can't run modern JavaScript, so if you edited `index.html`, keep it ES5. |
-| "This Connection Is Not Private" | Finish step 3 of the HTTPS setup (Certificate Trust Settings). |
-| Mic says "No audio device matching BlackHole" | Install BlackHole 2ch, or ignore it if you don't use the mic. |
 
 ## Built with Claude Code
 

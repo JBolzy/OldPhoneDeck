@@ -31,23 +31,15 @@ struct HTTPRequest {
     }
 }
 
-/// Lifetime: each pending receive/send closure holds the connection strongly; streaming viewers are held by `viewers`.
+/// Lifetime: each pending receive/send closure holds the connection strongly.
 final class HTTPConnection {
     private let conn: NWConnection
     private var buffer = Data()
     private let maxBody = 512 * 1024 * 1024
-    private var sending = false
-    var onClose: (() -> Void)?
 
     init(_ conn: NWConnection) { self.conn = conn }
 
     func start(queue: DispatchQueue, handler: @escaping (HTTPRequest, HTTPConnection) -> Void) {
-        conn.stateUpdateHandler = { [weak self] state in
-            switch state {
-            case .failed, .cancelled: self?.onClose?(); self?.onClose = nil
-            default: break
-            }
-        }
         conn.start(queue: queue)
         receive(handler)
     }
@@ -96,26 +88,6 @@ final class HTTPConnection {
         respond(200, "application/json", data)
     }
 
-    // MARK: MJPEG streaming (multipart/x-mixed-replace, supported by Safari since forever)
-
-    func beginMJPEG() {
-        let head = "HTTP/1.1 200 OK\r\nContent-Type: multipart/x-mixed-replace; boundary=frame\r\n" +
-            "Cache-Control: no-store\r\nConnection: close\r\n\r\n--frame\r\n"
-        conn.send(content: Data(head.utf8), completion: .contentProcessed { _ in })
-    }
-
-    /// Sends a frame unless the previous one is still in flight (drop frames instead of building latency).
-    func pushFrame(_ jpeg: Data) {
-        guard !sending else { return }
-        sending = true
-        // Each part ends with the next boundary: browsers only paint a part once they see that boundary,
-        // and a still desktop may not produce another frame for a long time.
-        let part = Data("Content-Type: image/jpeg\r\nContent-Length: \(jpeg.count)\r\n\r\n".utf8) + jpeg + Data("\r\n--frame\r\n".utf8)
-        conn.send(content: part, completion: .contentProcessed { error in
-            self.sending = false
-            if error != nil { self.conn.cancel() }
-        })
-    }
 }
 
 final class HTTPServer {

@@ -3,20 +3,17 @@ import AppKit
 // MARK: Options
 
 struct Options {
-    var port: UInt16 = 8045                // http = port, https = port+2, secure WebSocket = port+3
-    var micDevice = "BlackHole"            // output device that receives a modern iPhone's mic
+    var port: UInt16 = 8045
 
     init(_ args: [String]) {
         var it = args.dropFirst().makeIterator()
         while let a = it.next() {
             switch a {
             case "--port": port = UInt16(it.next() ?? "") ?? port
-            case "--mic-device": micDevice = it.next() ?? micDevice
             case "-h", "--help":
                 print("""
                 oldphonedeck: turn an old iPhone into a Stream Deck-style control panel for your Mac
-                  --port N          HTTP port (default 8045; HTTPS uses N+2, WebSocket N+3)
-                  --mic-device NAME audio device that receives the phone's mic (default BlackHole)
+                  --port N          HTTP port (default 8045)
                 """)
                 exit(0)
             default: print("Unknown option \(a) (try --help)"); exit(2)
@@ -70,13 +67,6 @@ app.setActivationPolicy(.accessory)
 let server: HTTPServer
 do { server = try HTTPServer(port: opts.port) } catch { print("Cannot listen on \(opts.port): \(error)"); exit(1) }
 
-// Camera + mic from a modern iPhone (browser, over the secure WebSocket).
-var cameraViewers: [ObjectIdentifier: HTTPConnection] = [:]   // touched only on server.queue
-let phoneMedia = PhoneMediaServer(token: token, audio: AudioOut(deviceMatch: opts.micDevice))
-phoneMedia.onFrame = { jpeg in
-    server.queue.async { for v in cameraViewers.values { v.pushFrame(jpeg) } }
-}
-
 let stats = Stats()
 stats.start()
 
@@ -85,24 +75,7 @@ stats.start()
 let webRoot = Bundle.module.url(forResource: "web", withExtension: nil)!
 
 let routes: (HTTPRequest, HTTPConnection) -> Void = { req, conn in
-    // Public: the page shell (so a home-screen bookmark loads) and the local CA as an iOS profile.
-    if req.path == "/oldphonedeck.mobileconfig" {
-        guard let der = try? Data(contentsOf: LocalTLS.caDER) else { return conn.respond(404, text: "no certificate yet") }
-        let cert: [String: Any] = [
-            "PayloadType": "com.apple.security.root", "PayloadVersion": 1,
-            "PayloadIdentifier": "com.oldphonedeck.ca.cert", "PayloadUUID": "6F1C2A4E-2B7D-4C5A-9E1F-50A1C0DEC0A1",
-            "PayloadDisplayName": "OldPhoneDeck CA", "PayloadCertificateFileName": "oldphonedeck-ca.cer", "PayloadContent": der,
-        ]
-        let profile: [String: Any] = [
-            "PayloadType": "Configuration", "PayloadVersion": 1,
-            "PayloadIdentifier": "com.oldphonedeck.ca", "PayloadUUID": "3B8E9D10-7C2F-4E61-A5B3-50A1C0DEC0A2",
-            "PayloadDisplayName": "OldPhoneDeck", "PayloadOrganization": "OldPhoneDeck",
-            "PayloadDescription": "Lets this iPhone open OldPhoneDeck on your Mac over HTTPS (needed for camera, mic and voice).",
-            "PayloadContent": [cert],
-        ]
-        let data = (try? PropertyListSerialization.data(fromPropertyList: profile, format: .xml, options: 0)) ?? Data()
-        return conn.respond(200, "application/x-apple-aspen-config", data)
-    }
+    // Public: the page shell, so a home-screen bookmark loads.
     if req.path == "/" || req.path == "/index.html" {
         let html = (try? Data(contentsOf: webRoot.appendingPathComponent("index.html"))) ?? Data()
         return conn.respond(200, "text/html; charset=utf-8", html)
@@ -112,7 +85,7 @@ let routes: (HTTPRequest, HTTPConnection) -> Void = { req, conn in
 
     switch (req.method, req.path) {
     case ("GET", "/info"):
-        conn.respondJSON(["camera": phoneMedia.isLive])
+        conn.respondJSON(["ok": true])   // lets the page check its access token
     case ("GET", "/stats"):
         conn.respondJSON(stats.snapshot())
     case ("GET", "/memory"):
@@ -149,31 +122,13 @@ let routes: (HTTPRequest, HTTPConnection) -> Void = { req, conn in
         guard Apps.isKnown(path) else { return conn.respond(404, text: "unknown app") }
         DispatchQueue.main.async { Apps.launch(path) }
         conn.respond(text: "ok")
-    case ("GET", "/camera.mjpg"):
-        let id = ObjectIdentifier(conn)
-        conn.onClose = { server.queue.async { cameraViewers[id] = nil } }
-        cameraViewers[id] = conn
-        conn.beginMJPEG()
-        if let last = phoneMedia.latestFrame { conn.pushFrame(last) }
-    case ("GET", "/camera.jpg"):
-        conn.respond(200, "image/jpeg", phoneMedia.latestFrame ?? Data())
     default:
         conn.respond(404, text: "not found")
     }
 }
 server.start(routes)
 
-// HTTPS + secure WebSocket for modern iPhones (Safari needs a secure page for camera, mic and speech).
 let lanIP = lanAddress()
-var httpsServer: HTTPServer?
-if let identity = LocalTLS.identity(for: lanIP) {
-    do {
-        let s = try HTTPServer(port: opts.port + 2, parameters: LocalTLS.parameters(identity), queue: server.queue)
-        s.start(routes)
-        httpsServer = s
-        try phoneMedia.startWebSocket(port: opts.port + 3, identity: identity)
-    } catch { print("⚠️  HTTPS failed to start: \(error)") }
-}
 
 // MARK: Start
 
@@ -185,10 +140,6 @@ OldPhoneDeck is running. On the phone (same Wi-Fi), open Safari and go to:
 
 Then tap Share → Add to Home Screen. Hold any key to choose your 4 apps.
 
-Modern iPhone (voice, camera, mic): once, open http://\(lanIP):\(opts.port)/oldphonedeck.mobileconfig,
-install it, enable it in Settings → General → About → Certificate Trust Settings,
-then use https://\(lanIP):\(opts.port + 2)/#k=\(token)
-Camera for OBS (Media Source): http://localhost:\(opts.port)/camera.mjpg?k=\(token)
 Ctrl-C to quit.
 
 """)
