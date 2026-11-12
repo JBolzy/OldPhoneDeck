@@ -158,6 +158,19 @@
   .erow .up { position: absolute; right: 4px; top: 4px; width: 30px; height: 26px; line-height: 26px; text-align: center; color: #8e8e93; }
   .erow.full { opacity: .35; }
 
+  /* ---- night mode: only a dim clock (and the attention strip, if needed); a tap wakes the deck for 30 s ---- */
+  #keys, .card, #clock, #right { -webkit-transition: opacity 1.5s; transition: opacity 1.5s; }
+  #nightClock { position: absolute; left: 0; right: 0; top: 50%; margin-top: -44px; text-align: center; color: #fff; opacity: 0; z-index: 1;
+    pointer-events: none; -webkit-transition: opacity 1.5s; transition: opacity 1.5s; }
+  #nightClock b { display: block; font: 700 56px/60px "SF Pro Rounded", ui-rounded, -apple-system, "Helvetica Neue", sans-serif; letter-spacing: -1.5px;
+    -webkit-font-feature-settings: "tnum"; font-feature-settings: "tnum"; }
+  #nightClock span { display: block; margin-top: 4px; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+  #nightShield { position: absolute; left: 0; top: 0; right: 0; bottom: 0; z-index: 9; display: none; }
+  #stage.night #nightClock { opacity: .3; }
+  #stage.night #nightShield { display: block; }
+  #stage.night #keys, #stage.night .card, #stage.night #clock, #stage.night #right { opacity: 0; }
+  #alert { -webkit-transition: opacity 1.5s; transition: opacity 1.5s; }
+  #stage.night #alert:not(.bad) { opacity: 0; }   /* amber notices wait until morning; red ones stay */
   #toast { position: absolute; left: 50%; top: 38px; -webkit-transform: translateX(-50%); transform: translateX(-50%); z-index: 20;
     background: rgba(44,44,46,.95); padding: 6px 12px; border-radius: 12px; font-size: 11px; font-weight: 500; white-space: nowrap; display: none; }
   #login .sheet { top: 40px; text-align: center; }
@@ -168,6 +181,8 @@
 <div id="safe"></div>
 <div id="stage">
   <div id="toast"></div>
+  <div id="nightClock"><b id="nTime"></b><span id="nDate"></span></div>
+  <div id="nightShield"></div>
 
   <!-- The deck: 2x2 app keys (left) + 2x2 status cards (right) -->
   <div id="deck" class="view on">
@@ -285,10 +300,19 @@
     var s = Math.min(aw / W, ah / H), st = $('stage');
     st.style.width = W + 'px'; st.style.height = H + 'px';
     st.style.webkitTransform = st.style.transform = 'scale(' + s + ')';
-    st.style.left = ins.l + (aw - W * s) / 2 + 'px';
-    st.style.top = ins.t + (ah - H * s) / 2 + 'px';
+    shiftBase = { l: ins.l + (aw - W * s) / 2, t: ins.t + (ah - H * s) / 2 };
+    place();
     layout();
   }
+  // Pixel shift: every minute the whole deck moves up to 3 px around a small circle, so nothing sits on the
+  // same pixels for hours (an LCD can keep a faint ghost of a static image).
+  var shiftBase = { l: 0, t: 0 }, shiftStep = 0;
+  function place() {
+    var a = shiftStep * Math.PI / 4, st = $('stage');
+    st.style.left = shiftBase.l + Math.round(3 * Math.cos(a)) + 'px';
+    st.style.top = shiftBase.t + Math.round(3 * Math.sin(a)) + 'px';
+  }
+  setInterval(function () { shiftStep = (shiftStep + 1) % 8; place(); }, 60000);
   var keyGeom = { cap: 90, x0: 16, y0: 52, rowH: 110 };
   function placeKeys() {
     var ks = $('keys').children, g = keyGeom;
@@ -343,6 +367,23 @@
   window.deckHome = function () { memOpen(false); sheet('edit', false); };
 
   // ---------- clock ----------
+  // Night mode runs on the Mac's clock. Set both hours equal to turn it off.
+  var NIGHT_FROM = 23, NIGHT_TO = 7, WAKE_MS = 30000, macHour = 12, wakeUntil = 0;
+  function setCls(el, name, on) {
+    var has = (' ' + el.className + ' ').indexOf(' ' + name + ' ') >= 0;
+    if (on && !has) el.className += (el.className ? ' ' : '') + name;
+    else if (!on && has) el.className = (' ' + el.className + ' ').replace(' ' + name + ' ', ' ').replace(/^\s+|\s+$/g, '');
+  }
+  function applyNight() {
+    var night = NIGHT_FROM !== NIGHT_TO &&
+      (NIGHT_FROM > NIGHT_TO ? (macHour >= NIGHT_FROM || macHour < NIGHT_TO) : (macHour >= NIGHT_FROM && macHour < NIGHT_TO));
+    var busy = !!document.querySelector('.scrim.on');   // never go dark under an open sheet
+    setCls($('stage'), 'night', night && !busy && Date.now() >= wakeUntil);
+  }
+  // A tap while it is dark wakes the deck (the shield swallows that tap, so it can't launch an app).
+  function wake() { wakeUntil = Date.now() + WAKE_MS; applyNight(); setTimeout(applyNight, WAKE_MS + 200); }
+  $('nightShield').addEventListener('touchstart', function (e) { e.preventDefault(); wake(); });
+  $('nightShield').addEventListener('click', wake);
   var DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   // Show the Mac's time, not the phone's: skew/tz come from /stats (null until the first poll).
@@ -359,6 +400,10 @@
     $('time').textContent = (ampm ? (h % 12 || 12) : h) + ':' + ('0' + mi).slice(-2);
     $('ampm').textContent = ampm ? (h < 12 ? 'AM' : 'PM') : '';
     $('date').textContent = DAYS[wd] + ' · ' + dd + ' ' + MONTHS[mo];
+    $('nTime').textContent = $('time').textContent + ($('ampm').textContent ? ' ' + $('ampm').textContent : '');
+    $('nDate').textContent = $('date').textContent;
+    macHour = h;
+    applyNight();
   }
   setInterval(tick, 10000);
 
@@ -595,7 +640,7 @@
       el.style.right = edge + 'px';
       el.style.maxWidth = Math.max(0, W - edge - (16 + $('clock').offsetWidth + 12)) + 'px';
     }
-    $('stage').className = offline ? 'offline' : '';
+    setCls($('stage'), 'offline', offline);
   }
   // ---------- memory overlay ----------
   var memTimer = null, memOlKey = '';

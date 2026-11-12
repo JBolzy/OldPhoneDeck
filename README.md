@@ -17,6 +17,7 @@ No jailbreak, no App Store, nothing to install on the phone: it runs in Safari, 
 - **Internet widget:** download, upload and ping (macOS's built-in `networkQuality`, re-run every 6 hours), a live traffic graph, and the link in use (Wi-Fi rate or Ethernet speed). Tap it to re-test.
 - **Batteries widget:** MacBook, Magic Keyboard / Mouse / Trackpad and AirPods (with case), each as an icon + percentage.
 - **System widget:** RAM (coloured by memory pressure, with swap), CPU, free disk space and the Mac's uptime. Tap RAM for the top apps by memory, memory pressure and swap (plus an Unload button for a loaded Ollama model).
+- **Made for an always-on screen:** the whole deck drifts a few pixels every minute (pixel shift), and from 11 pm to 7 am (the Mac's clock; edit `NIGHT_FROM` / `NIGHT_TO` in `index.html`) it fades to a dim clock. Red alerts stay visible; a tap wakes the deck for 30 seconds.
 - **Fits any iPhone:** a compact 480×320 layout on old phones; full-width landscape and a portrait layout on modern ones.
 
 ## Requirements
